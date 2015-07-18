@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 var through2 = require("through2")
-var byline = require('byline')
 var fs = require('fs')
 var mdUtils = require('../index.js')
 var argv = require('minimist')(process.argv.slice(2));

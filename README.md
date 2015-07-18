@@ -1,13 +1,16 @@
 # md-stream-utils
-to write
+
+Set of utilities to work with Markdown.
+
+The basis of this work come from https://github.com/alanshaw/md-tokenizer
+
+It s much lighter than https://github.com/chjj/marked
 
 ## Installation
 Run the following commands to download and install the application:
 
 ```sh
-$  clone https://github.com/maboiteaspam/md-stream-utils md-stream-utils
-$ cd md-stream-utils
-$ npm install
+    npm i md-stream-utils -g
 ```
 
 ## Documentation
@@ -28,3 +31,14 @@ $ npm install
 
 ## License
 See the [LICENSE](./LICENSE) file.
+
+## Demo purpose
+   
+- This is the *list* one
+- This is the **list** two
+- This is the `list` three
+- This is the __list__ three
+- This is the _list_ three
+- This is the ===list=== three
+
+

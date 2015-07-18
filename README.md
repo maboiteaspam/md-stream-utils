@@ -17,7 +17,7 @@ Run the following commands to download and install the application:
 
 ## Usage
 
-__mb-block:__ A binary tool to parse Markdown content by block.
+__md-block:__ A binary tool to parse Markdown content by block.
 
     mb-block [inputfile [outputfile]] [-c 'content'] [-t 'text']
     
@@ -33,7 +33,7 @@ __mb-block:__ A binary tool to parse Markdown content by block.
     `md-block -c 'Usage' -t 'heading' README.md`
 
 
-__mb-paragraph:__ A binary tool to parse Markdown content by paragraph.
+__md-paragraph:__ A binary tool to parse Markdown content by paragraph.
 
     mb-paragraph [inputfile [outputfile]] [-c 'content']
     
@@ -48,7 +48,7 @@ __mb-paragraph:__ A binary tool to parse Markdown content by paragraph.
     `md-paragraph -c 'Usage' README.md`
 
 
-__mb-colorize:__ A binary tool to colorize Markdown content.
+__md-colorize:__ A binary tool to colorize Markdown content.
 
     md-colorize [inputfile [outputfile]]
     

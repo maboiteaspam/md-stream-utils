@@ -4,7 +4,10 @@
   "description": "Set of utilities to work with Markdown stream.",
   "main": "index.js",
   "scripts": {},
-  "bin": {},
+  "bin": {
+    "md-block": "./bin/md-block.js",
+    "md-paragraph": "./bin/md-paragraph.js"
+  },
   "keywords": [
     "MD",
     "Markdown",

@@ -1,3 +1,15 @@
+:package: patch v0.0.6
+
+```
+Quality update!
+```
+
+* [[f5f201d3a1](https://github.com/maboiteaspam/md-stream-utils/commit/f5f201d3a1) - Fix README (clement) 
+* [[0fdded4c1e](https://github.com/maboiteaspam/md-stream-utils/commit/0fdded4c1e) - Update Usage section of README (clement) 
+* [[603ef27b3e](https://github.com/maboiteaspam/md-stream-utils/commit/603ef27b3e) - Change md-colorize bin, removed useless variables (clement) 
+* [[a1283a4841](https://github.com/maboiteaspam/md-stream-utils/commit/a1283a4841) - patch v0.0.5 (clement) 
+
+
 :package: patch v0.0.5
 
 ```

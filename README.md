@@ -118,7 +118,7 @@ __byParapgraph__
 
 - Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of array of nodes`.
 - Each push is an `array of nodes` representing a `paragraph`.
-- A `paragraph` is an `array of nodes` starting `heading` and an ending `new line` nodes.
+- A `paragraph` is an `array of nodes` starting with a `heading` node and an ending with a `new line` node.
 
 ```js
     var mdUtils = require('../index.js')

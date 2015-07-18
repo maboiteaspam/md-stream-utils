@@ -100,7 +100,7 @@ __byBlock__
 
 - Transforms a `stream of nodes` into a `stream of array of nodes`.
 - Each push is an `array of nodes` representing a `block`.
-- A `block` is an `array of nodes` starting `heading`, `code-block`, `list-item` nodes.
+- A `block` is an `array of nodes` starting with one of `heading`, `code-block`, `list-item` nodes.
 
 ```js
     var mdUtils = require('../index.js')

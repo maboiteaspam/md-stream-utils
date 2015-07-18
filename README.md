@@ -50,7 +50,7 @@ __mb-paragraph:__ A binary tool to parse Markdown content by paragraph.
 
 ## API
 
-md-stream-utils comes with several stream transform modules.
+`md-stream-utils` comes with several stream transform modules.
 
 ```js
 module.exports = {
@@ -68,6 +68,7 @@ module.exports = {
 ```
 
 __tokenizer__
+
 It is the original https://github.com/alanshaw/md-tokenizer
 
 ```js
@@ -80,6 +81,7 @@ It is the original https://github.com/alanshaw/md-tokenizer
 ```
 
 __byLine__
+
 Transforms a `stream of nodes` into a `stream of array of nodes`.
 Each push represents a line.
 
@@ -95,6 +97,7 @@ Each push represents a line.
 ```
 
 __byBlock__
+
 Transforms a `stream of nodes` into a `stream of array of nodes`.
 Each push is an `array of nodes` representing a `block`.
 A `block` is an `array of nodes` starting `heading`, `code-block`, `list-item` nodes.
@@ -112,6 +115,7 @@ A `block` is an `array of nodes` starting `heading`, `code-block`, `list-item` n
 ```
 
 __byParapgraph__
+
 Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of array of nodes`.
 Each push is an `array of nodes` representing a `paragraph`.
 A `paragraph` is an `array of nodes` starting `heading` and an ending `new line` nodes.
@@ -128,6 +132,7 @@ A `paragraph` is an `array of nodes` starting `heading` and an ending `new line`
 ```
 
 __cliColorize__
+
 Transforms a `stream of array of nodes` or a `stream of nodes` into a corresponding colorized stream with `chalk`.
 Each push is an `array of nodes` or a `node`.
 
@@ -142,6 +147,7 @@ Each push is an `array of nodes` or a `node`.
 ```
 
 __toString__
+
 Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of strings`.
 Each push is a `string` representing a `node` or an `array of nodes`.
 
@@ -156,6 +162,7 @@ Each push is a `string` representing a `node` or an `array of nodes`.
 ```
 
 __flatten__
+
 Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of nodes`.
 Each push represents a `node`.
 
@@ -170,6 +177,7 @@ Each push represents a `node`.
 ```
 
 __filter__
+
 Filters a `stream of array of nodes` or a `stream of nodes`.
 Each push represents a `node`.
 

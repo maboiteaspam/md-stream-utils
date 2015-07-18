@@ -17,24 +17,29 @@ Run the following commands to download and install the application:
 
 ## Usage
 
-    __mb-block__: A binary tool to parse Markdown content by block.
+__mb-block:__ A binary tool to parse Markdown content by block.
+
+    mb-block [inputfile [outputfile]] [-c 'content'] [-t 'text']
     -c | --content    Content to match.
     -t | --type       Block type to match.
 
- *usage*:
-```sh
+Display 'Usage' heading from stdin:
     cat README.md | md-block -c 'Usage' -t 'heading'
+    
+Display 'Usage' heading from a file:
     md-block -c 'Usage' -t 'heading' README.md
-```
 
-    __mb-paragraph__: A binary tool to parse Markdown content by paragraph.
+
+__mb-paragraph:__ A binary tool to parse Markdown content by paragraph.
+
+    mb-paragraph [inputfile [outputfile]] [-c 'content']
     -c | --content    Content to match.
-
-*usage*:
-```sh
-    cat README.md | md-paragraph -c 'Usage'
-    md-paragraph -c 'Usage' README.md 
-```
+    
+Display 'Usage' section from stdin:
+    `cat README.md | md-paragraph -c 'Usage'`
+    
+Display 'Usage' section from a file:
+    `md-paragraph -c 'Usage' README.md`
 
 
 ## API

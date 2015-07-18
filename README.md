@@ -13,8 +13,159 @@ Run the following commands to download and install the application:
     npm i md-stream-utils -g
 ```
 
-## Documentation
+## Usage
 
+- **mb-block** 
+    A binary tool to parse Markdown content by block.
+- **options**
+    -c | --content    Content to match.
+    -t | --type       Block type to match.
+
+    `md-block -c 'Usage' -t 'heading'`
+
+
+- **mb-paragraph** 
+    A binary tool to parse Markdown content by paragraph.
+- **options**
+    -c | --content    Content to match.
+
+    `md-paragraph -c 'Usage'`
+
+## API
+
+md-stream-utils comes with several stream transform modules.
+
+```js
+module.exports = {
+  tokenizer: function(){
+    return mdTok();
+  },
+  byLine: require("./lib/by-line"),
+  byBlock: require("./lib/by-block"),
+  byParapgraph: require("./lib/by-paragraph"),
+  cliColorize: require("./lib/cli-colorize"),
+  toString: require("./lib/to-string"),
+  flatten: require("./lib/flatten"),
+  filter: require("./lib/filter")
+}
+```
+
+__tokenizer__
+It is the original https://github.com/alanshaw/md-tokenizer
+
+```js
+    var mdUtils = require('../index.js')
+    
+    process.stdin
+      .pipe(mdUtils.tokenizer())
+      .pipe(mdUtils.toString())
+      .pipe(process.stdout)
+```
+
+__byLine__
+Transforms a `stream of nodes` into a `stream of array of nodes`.
+Each push represents a line.
+
+```js
+    var mdUtils = require('../index.js')
+        
+    process.stdin
+      .pipe(mdUtils.tokenizer())
+      .pipe(mdUtils.byLine())
+      .pipe(mdUtils.cliColorize())
+      .pipe(mdUtils.toString({append: '--'}))
+      .pipe(process.stdout)
+```
+
+__byBlock__
+Transforms a `stream of nodes` into a `stream of array of nodes`.
+Each push is an `array of nodes` representing a `block`.
+A `block` is an `array of nodes` starting `heading`, `code-block`, `list-item` nodes.
+
+```js
+    var mdUtils = require('../index.js')
+    
+    process.stdin
+      .pipe(mdUtils.tokenizer())
+      .pipe(mdUtils.byBlock())
+      .pipe(mdUtils.cliColorize())
+      .pipe(mdUtils.toString({append: '--'}))
+      .pipe(process.stdout)
+
+```
+
+__byParapgraph__
+Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of array of nodes`.
+Each push is an `array of nodes` representing a `paragraph`.
+A `paragraph` is an `array of nodes` starting `heading` and an ending `new line` nodes.
+
+```js
+    var mdUtils = require('../index.js')
+    
+    process.stdin
+      .pipe(mdUtils.tokenizer())
+      .pipe(mdUtils.byParapgraph())
+      .pipe(mdUtils.cliColorize())
+      .pipe(mdUtils.toString({append: '--'}))
+      .pipe(process.stdout)
+```
+
+__cliColorize__
+Transforms a `stream of array of nodes` or a `stream of nodes` into a corresponding colorized stream with `chalk`.
+Each push is an `array of nodes` or a `node`.
+
+```js
+    var mdUtils = require('../index.js')
+    
+    process.stdin
+      .pipe(mdUtils.tokenizer())
+      .pipe(mdUtils.cliColorize())
+      .pipe(mdUtils.toString())
+      .pipe(process.stdout)
+```
+
+__toString__
+Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of strings`.
+Each push is a `string` representing a `node` or an `array of nodes`.
+
+```js
+    var mdUtils = require('../index.js')
+    
+    process.stdin
+      .pipe(mdUtils.tokenizer())
+      .pipe(mdUtils.cliColorize())
+      .pipe(mdUtils.toString())
+      .pipe(process.stdout)
+```
+
+__flatten__
+Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of nodes`.
+Each push represents a `node`.
+
+```js
+    var mdUtils = require('../index.js')
+    process.stdin
+      .pipe(mdUtils.tokenizer())
+      .pipe(mdUtils.byParapgraph())
+      .pipe(mdUtils.flatten())
+      .pipe(mdUtils.toString())
+      .pipe(process.stdout)
+```
+
+__filter__
+Filters a `stream of array of nodes` or a `stream of nodes`.
+Each push represents a `node`.
+
+```js
+    var mdUtils = require('../index.js')
+        
+    process.stdin
+      .pipe(mdUtils.tokenizer())
+      .pipe(mdUtils.filter({type: 'text'}))
+      .pipe(mdUtils.cliColorize())
+      .pipe(mdUtils.toString())
+      .pipe(process.stdout)
+```
 
 
 
@@ -32,13 +183,10 @@ Run the following commands to download and install the application:
 ## License
 See the [LICENSE](./LICENSE) file.
 
-## Demo purpose
-   
-- This is the *list* one
-- This is the **list** two
-- This is the `list` three
-- This is the __list__ three
-- This is the _list_ three
-- This is the ===list=== three
+## Notes
 
+It is not perfectly github markdown compatible.
 
+## Todo
+
+write the tests

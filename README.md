@@ -4,7 +4,7 @@ Set of utilities to work with Markdown.
 
 The basis of this work come from https://github.com/alanshaw/md-tokenizer
 
-It s much lighter than https://github.com/chjj/marked
+An alternative to https://github.com/chjj/marked
 
 ## Installation
 Run the following commands to download and install the application:

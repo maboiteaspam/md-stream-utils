@@ -23,6 +23,7 @@
     "chalk": "^1.1.0",
     "commander": "^2.8.1",
     "md-tokenizer": "alanshaw/md-tokenizer",
+    "minimist": "^1.1.1",
     "through2": "^2.0.0",
     "underscore": "^1.8.3"
   },

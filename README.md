@@ -24,13 +24,12 @@ __mb-block:__ A binary tool to parse Markdown content by block.
     -c | --content    Content to match.
     -t | --type       Block type to match.
 
-``` Display 'Usage' heading from stdin:
-    cat README.md | md-block -c 'Usage' -t 'heading'
-```
++ Display 'Usage' heading from stdin:
+    `cat README.md | md-block -c 'Usage' -t 'heading'`
     
-``` Display 'Usage' heading from a file:
-    md-block -c 'Usage' -t 'heading' README.md
-```
++ Display 'Usage' heading from a file:
+    `md-block -c 'Usage' -t 'heading' README.md`
+
 
 __mb-paragraph:__ A binary tool to parse Markdown content by paragraph.
 
@@ -38,10 +37,10 @@ __mb-paragraph:__ A binary tool to parse Markdown content by paragraph.
     
     -c | --content    Content to match.
     
-Display 'Usage' section from stdin:
++ Display 'Usage' section from stdin:
     `cat README.md | md-paragraph -c 'Usage'`
     
-Display 'Usage' section from a file:
++ Display 'Usage' section from a file:
     `md-paragraph -c 'Usage' README.md`
 
 

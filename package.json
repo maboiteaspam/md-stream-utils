@@ -1,14 +1,14 @@
 {
   "name": "md-stream-utils",
   "version": "0.0.1",
-  "description": "to write",
+  "description": "Set of utilities to work with Markdown stream.",
   "main": "index.js",
   "scripts": {},
   "bin": {},
   "keywords": [
-    "To",
-    "be",
-    "done"
+    "MD",
+    "Markdown",
+    "stream"
   ],
   "author": "maboiteaspam",
   "license": "WTF",

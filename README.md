@@ -69,7 +69,7 @@ module.exports = {
 
 __tokenizer__
 
-It is the original https://github.com/alanshaw/md-tokenizer
+- It is the original https://github.com/alanshaw/md-tokenizer
 
 ```js
     var mdUtils = require('../index.js')
@@ -82,8 +82,8 @@ It is the original https://github.com/alanshaw/md-tokenizer
 
 __byLine__
 
-Transforms a `stream of nodes` into a `stream of array of nodes`.
-Each push represents a line.
+- Transforms a `stream of nodes` into a `stream of array of nodes`.
+- Each push represents a line.
 
 ```js
     var mdUtils = require('../index.js')
@@ -98,9 +98,9 @@ Each push represents a line.
 
 __byBlock__
 
-Transforms a `stream of nodes` into a `stream of array of nodes`.
-Each push is an `array of nodes` representing a `block`.
-A `block` is an `array of nodes` starting `heading`, `code-block`, `list-item` nodes.
+- Transforms a `stream of nodes` into a `stream of array of nodes`.
+- Each push is an `array of nodes` representing a `block`.
+- A `block` is an `array of nodes` starting `heading`, `code-block`, `list-item` nodes.
 
 ```js
     var mdUtils = require('../index.js')
@@ -116,9 +116,9 @@ A `block` is an `array of nodes` starting `heading`, `code-block`, `list-item` n
 
 __byParapgraph__
 
-Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of array of nodes`.
-Each push is an `array of nodes` representing a `paragraph`.
-A `paragraph` is an `array of nodes` starting `heading` and an ending `new line` nodes.
+- Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of array of nodes`.
+- Each push is an `array of nodes` representing a `paragraph`.
+- A `paragraph` is an `array of nodes` starting `heading` and an ending `new line` nodes.
 
 ```js
     var mdUtils = require('../index.js')
@@ -133,8 +133,8 @@ A `paragraph` is an `array of nodes` starting `heading` and an ending `new line`
 
 __cliColorize__
 
-Transforms a `stream of array of nodes` or a `stream of nodes` into a corresponding colorized stream with `chalk`.
-Each push is an `array of nodes` or a `node`.
+- Transforms a `stream of array of nodes` or a `stream of nodes` into a corresponding colorized stream with `chalk`.
+- Each push is an `array of nodes` or a `node`.
 
 ```js
     var mdUtils = require('../index.js')
@@ -148,8 +148,8 @@ Each push is an `array of nodes` or a `node`.
 
 __toString__
 
-Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of strings`.
-Each push is a `string` representing a `node` or an `array of nodes`.
+- Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of strings`.
+- Each push is a `string` representing a `node` or an `array of nodes`.
 
 ```js
     var mdUtils = require('../index.js')
@@ -163,8 +163,8 @@ Each push is a `string` representing a `node` or an `array of nodes`.
 
 __flatten__
 
-Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of nodes`.
-Each push represents a `node`.
+- Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of nodes`.
+- Each push represents a `node`.
 
 ```js
     var mdUtils = require('../index.js')
@@ -178,8 +178,8 @@ Each push represents a `node`.
 
 __filter__
 
-Filters a `stream of array of nodes` or a `stream of nodes`.
-Each push represents a `node`.
+- Filters a `stream of array of nodes` or a `stream of nodes`.
+- Each push represents a `node`.
 
 ```js
     var mdUtils = require('../index.js')

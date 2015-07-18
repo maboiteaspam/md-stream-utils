@@ -20,6 +20,7 @@ Run the following commands to download and install the application:
 __mb-block:__ A binary tool to parse Markdown content by block.
 
     mb-block [inputfile [outputfile]] [-c 'content'] [-t 'text']
+    
     -c | --content    Content to match.
     -t | --type       Block type to match.
 
@@ -34,6 +35,7 @@ __mb-block:__ A binary tool to parse Markdown content by block.
 __mb-paragraph:__ A binary tool to parse Markdown content by paragraph.
 
     mb-paragraph [inputfile [outputfile]] [-c 'content']
+    
     -c | --content    Content to match.
     
 Display 'Usage' section from stdin:

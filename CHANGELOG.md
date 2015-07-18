@@ -1,3 +1,10 @@
+:package: patch v0.0.5
+
+```
+Change `mb-block` and `md-paragraph` to not colorize output.
+Add new binary `md-colorize` to colorize an input MD feed.
+```
+
 :package: patch v0.0.4
 
 ```

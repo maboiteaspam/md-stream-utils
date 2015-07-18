@@ -14,8 +14,8 @@ var content = argv.c || argv.content || null;
 input
   .pipe(mdUtils.tokenizer())
   .pipe(mdUtils.byBlock())
-  .pipe( content || type ? mdUtils.filter({type: type, content: content}) : through2.obj() )
-  .pipe( mdUtils.cliColorize())
+  .pipe(content || type ? mdUtils.filter({type: type, content: content}) : through2.obj())
+  .pipe(mdUtils.cliColorize())
   .pipe(output)
 
 input.on('end', function(){

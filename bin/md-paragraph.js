@@ -13,8 +13,8 @@ var content = argv.c || argv.content || null;
 input
   .pipe(mdUtils.tokenizer())
   .pipe(mdUtils.byParapgraph())
-  .pipe( content ? mdUtils.filter({content: content}) : through2.obj() )
-  .pipe( mdUtils.cliColorize())
+  .pipe(content ? mdUtils.filter({content: content}) : through2.obj())
+  .pipe(mdUtils.cliColorize())
   .pipe(output)
 
 input.on('end', function(){

@@ -24,11 +24,11 @@ __mb-block:__ A binary tool to parse Markdown content by block.
     -c | --content    Content to match.
     -t | --type       Block type to match.
 
-```Display 'Usage' heading from stdin:
+``` Display 'Usage' heading from stdin:
     cat README.md | md-block -c 'Usage' -t 'heading'
 ```
     
-```Display 'Usage' heading from a file:
+``` Display 'Usage' heading from a file:
     md-block -c 'Usage' -t 'heading' README.md
 ```
 

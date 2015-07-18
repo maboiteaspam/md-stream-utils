@@ -17,8 +17,7 @@ Run the following commands to download and install the application:
 
 ## Usage
 
-__mb-block__: A binary tool to parse Markdown content by block.
-
+    __mb-block__: A binary tool to parse Markdown content by block.
     -c | --content    Content to match.
     -t | --type       Block type to match.
 
@@ -28,8 +27,7 @@ __mb-block__: A binary tool to parse Markdown content by block.
     md-block -c 'Usage' -t 'heading' README.md
 ```
 
-__mb-paragraph__: A binary tool to parse Markdown content by paragraph.
-
+    __mb-paragraph__: A binary tool to parse Markdown content by paragraph.
     -c | --content    Content to match.
 
 *usage*:

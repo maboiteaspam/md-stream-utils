@@ -10,13 +10,21 @@ var output = argv._.length > 1 ? fs.createWriteStream(argv._[1]) : process.stdou
 var type = argv.t || argv.type || null;
 var content = argv.c || argv.content || null;
 
+var d = '';
 input
   .pipe(mdUtils.tokenizer())
   .pipe(mdUtils.byBlock())
   .pipe(content || type ? mdUtils.filter({type: type, content: content}) : through2.obj())
   .pipe(mdUtils.cliColorize())
+  .pipe(mdUtils.toString())
+  .on('data', function(data){
+    if (data) {
+      d = '' + data
+    }
+  })
+  .on('end', function(){
+    if (!d.match(/\n$/)) {
+      output.write('\n')
+    }
+  })
   .pipe(output)
-
-input.on('end', function(){
-  output.write('\n')
-})

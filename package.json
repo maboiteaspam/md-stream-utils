@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {},
   "bin": {
+    "md-colorize": "./bin/md-colorize.js",
     "md-block": "./bin/md-block.js",
     "md-paragraph": "./bin/md-paragraph.js"
   },

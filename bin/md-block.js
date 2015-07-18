@@ -15,7 +15,6 @@ input
   .pipe(mdUtils.tokenizer())
   .pipe(mdUtils.byBlock())
   .pipe(content || type ? mdUtils.filter({type: type, content: content}) : through2.obj())
-  .pipe(mdUtils.cliColorize())
   .pipe(mdUtils.toString())
   .on('data', function(data){
     if (data) {

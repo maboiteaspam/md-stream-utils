@@ -1,24 +1,13 @@
-var fs = require("fs")
-var mdtok = require("md-tokenizer")
-var mdByLine = require("./lib/by-line")
-var mdByBlock = require("./lib/by-block")
-var mdByP = require("./lib/by-paragraph")
-var mdFilter = require("./lib/filter")
-var mdFlat = require("./lib/flatten")
-var mdCli = require("./lib/cli-colorize")
-var toString = require("./lib/to-string")
-
-//var t = mdtok(function (src, token) {
-//  JSON.stringify([token.type, src])
-//})
-
-fs.createReadStream("README.md")
-  .pipe(mdtok())
-  //.pipe(mdByBlock ())
-  .pipe(mdByP ())
-  .pipe(mdFilter ({content: /Install/}))
-  //.pipe(process.stdout)
-  .pipe(mdFlat ())
-  .pipe(mdByLine ())
-  //.pipe(toString ({prepend:'-----------\n'}))
-  .pipe(mdCli ())
+var mdTok = require("md-tokenizer");
+module.exports = {
+  tokenizer: function(){
+    return mdTok();
+  },
+  byLine: require("./lib/by-line"),
+  byBlock: require("./lib/by-block"),
+  byParapgraph: require("./lib/by-paragraph"),
+  cliColorize: require("./lib/cli-colorize"),
+  toString: require("./lib/to-string"),
+  flatten: require("./lib/flatten"),
+  filter: require("./lib/filter")
+}

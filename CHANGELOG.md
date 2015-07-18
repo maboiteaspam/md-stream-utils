@@ -1,3 +1,9 @@
+:package: patch v0.0.4
+
+```
+Fix package dependencies to avoid git requirement
+```
+
 :package: patch v0.0.3
 
 ```

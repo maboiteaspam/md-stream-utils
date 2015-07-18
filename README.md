@@ -9,32 +9,31 @@ It s much lighter than https://github.com/chjj/marked
 ## Installation
 Run the following commands to download and install the application:
 
-```sh
-    npm i md-stream-utils -g
-```
+*Binary install*
+```sh   npm i md-stream-utils -g ```
+
+*API install*
+```sh   npm i md-stream-utils --save ```
 
 ## Usage
 
- **mb-block** 
+*mb-block*
     A binary tool to parse Markdown content by block.
- **options**
+ __options__:
     -c | --content    Content to match.
     -t | --type       Block type to match.
+ __examples__:
+```sh   cat README.md | md-block -c 'Usage' -t 'heading' ```
+```sh   md-block -c 'Usage' -t 'heading' README.md ```
 
-```sh
-    cat README.md | md-block -c 'Usage' -t 'heading'
-    md-block -c 'Usage' -t 'heading' README.md
-```
-
- **mb-paragraph** 
+*mb-paragraph* 
     A binary tool to parse Markdown content by paragraph.
- **options**
+ __options__:
     -c | --content    Content to match.
+ __examples__:
+```sh   cat README.md | md-paragraph -c 'Usage' ```
+```sh   md-paragraph -c 'Usage' README.md ```
 
-```sh
-    cat README.md | md-paragraph -c 'Usage'
-    md-paragraph -c 'Usage' README.md
-```
 
 ## API
 

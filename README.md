@@ -48,6 +48,19 @@ __mb-paragraph:__ A binary tool to parse Markdown content by paragraph.
     `md-paragraph -c 'Usage' README.md`
 
 
+__mb-colorize:__ A binary tool to colorize Markdown content.
+
+    md-colorize [inputfile [outputfile]]
+    
++ Display 'Usage' section from `stdin` with color:
+
+    `cat README.md | md-paragraph -c 'Usage' | md-colorize`
+    
++ Display 'Usage' section from a `file` with color:
+
+    `md-paragraph -c 'Usage' README.md | md-colorize`
+
+
 ## API
 
 `md-stream-utils` comes with several stream transform modules.

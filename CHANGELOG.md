@@ -1,3 +1,11 @@
+:package: patch v0.0.7
+
+```
+Improved md-colorize coloring support
+It can display multiple style on the same text
+Also updated styles.
+```
+
 :package: patch v0.0.6
 
 ```

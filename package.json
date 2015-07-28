@@ -32,6 +32,8 @@
     "underscore": "^1.8.3"
   },
   "devDependencies": {
+    "multiline": "^1.0.2",
+    "resumer": "0.0.0",
     "should": "^7.0.2"
   }
 }

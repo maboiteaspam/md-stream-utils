@@ -384,24 +384,13 @@ function block(bName, colorizer,  token, showTokens) {
       }
 
       if (okBlock) {
-        buf.forEach(function (chunk) {
+        buf.forEach(function (chunk, i) {
           if (!showTokens && chunk.type.match(/^token:/)) {
             chunk.originalStr = chunk.str;
             chunk.str = '';
           }
-          if (!showTokens && chunk.type.match(/^token:/)) {
-            chunk.originalStr = chunk.str;
-            chunk.str = '';
-          }
+          if (chunk.str.length) chunk.str = colorizer(chunk.str)
         })
-        var open = ''
-        var close = ''
-        colorizer._styles.forEach(function (style) {
-          open += chalk.styles[style].open
-          close += chalk.styles[style].close
-        })
-        buf.prepend({type: 'token:chalk', str: open})
-        buf.append({type: 'token:chalk', str: close})
       }
 
       buf.isBuffering = false

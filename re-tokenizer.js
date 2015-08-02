@@ -41,11 +41,11 @@ fs.createReadStream('README.md')
   }))
   .pipe(lineBlock('heading', '#', 6))
   //.pipe(lineBlock('codeline', ' ', 6))
+  //.pipe(lineBlock('dash-list', '+'))
+  //.pipe(lineBlock('dash-list', '-'))
 
   .pipe(emphasis('```', true))
   .pipe(emphasis('``', true))
-
-
   .pipe(emphasis('`', false))
   .pipe(emphasis('--', false,  '`'))
   .pipe(emphasis('-', false,  '`'))
@@ -62,12 +62,15 @@ fs.createReadStream('README.md')
     callback()
   }))
 
-  .pipe(block('heading', chalk.cyan, null, false))
-  .pipe(block('emphasis', chalk.white.italic, '`', false))
-  .pipe(block('emphasis', chalk.bold, '_', false))
-  .pipe(block('emphasis', chalk.blue, '-', false))
-  .pipe(block('emphasis', chalk.magenta, '*', false))
-
+  .pipe(colorize('heading', chalk.cyan))
+  .pipe(colorize('emphasis', chalk.white.italic, '`'))
+  .pipe(colorize('emphasis', chalk.bold, '_'))
+  .pipe(colorize('emphasis', chalk.blue, '-'))
+  .pipe(colorize('emphasis', chalk.magenta, '*'))
+  .pipe(hideToken(/[`_#-\*]+/))
+  .pipe(afterBlock('heading','\n\n','\n'))
+  .pipe(surroundBlock('==','', 'heading'))
+  .pipe(surroundBlock('>>>','<<<', null, 'heading'))
   .pipe(through2.obj(function(chunk, enc, callback){
     this.push(chunk, enc)
     callback()
@@ -127,7 +130,6 @@ function less() {
     stdin.pause();
     stdin.setEncoding( 'utf8' );
     var size = process.stdout.getWindowSize()
-    var width = size[0]
     var height = size[1]
     var startLinePosition = 0
     var curLinesDisplayed = 0
@@ -142,24 +144,10 @@ function less() {
         curLinesDisplayed=startLinePosition+height
         startLinePosition--
         lessBuf.skip()
-        ////console.log(lessBuf.buffer)
-        //var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
-        //sub.forEach(function (line) {
-        //  line.originalToken.forEach(function (c) {
-        //    lessBuf.append(c)
-        //  })
-        //})
-        //lessBuf.updateChanges__()
-        ////console.log('___________ %s', startLinePosition)
-        //////console.log(wholeBuf.buffer.length, sub.buffer.length, startLinePosition, height)
-        ////console.log(lessBuf.strBuffer)
-        ////console.log('----------------')
-        //lessBuf.flush()
         var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
         sub.reverse().forEach(function (line, i) {
           require('readline').cursorTo(process.stdout,
-            0,
-            sub.buffer.length-i-1)
+            0, sub.buffer.length-i-1)
           require('readline').clearLine(process.stdout, 0)
           line.originalToken.forEach(function (c) {
             lessBuf.append(c)
@@ -167,8 +155,7 @@ function less() {
           })
         })
         require('readline').cursorTo(process.stdout,
-          0,
-          sub.buffer.length)
+          0, sub.buffer.length)
       }
     }
     var moveDown = function(){
@@ -211,10 +198,6 @@ function less() {
             lessBuf.append(c)
           })
         })
-        //console.log('ss %s %s %s %s',
-        //  curLinesDisplayed, startLinePosition,
-        //  sub.buffer.length,
-        //  wholeBuf.buffer.length)
         lessBuf.flush()
       }
       if (curLinesDisplayed == startLinePosition+height+1) {
@@ -227,12 +210,6 @@ function less() {
   return lessBuf.stream
 }
 
-function clearScreen (std){
-  std = std || process.stdout
-  std.write('\033[2J');
-  std.write('\033');
-  std.write('\n');
-}
 function listenStdin(keys){
   var fn = function( key ){
     if (key in keys) {
@@ -249,13 +226,13 @@ function lineBlock(block, str, maxPower) {
   var buf = new StreamBuffer2()
   var okStr = str.match(/[\[\]*]/) ? str.replace(/([\[\]*])/g, '\\$1') : str
   var okNotStr = str.match(/[\[\]*]/) ? str[0].replace(/([\[\]*])/g, '\\$1') : str[0]
-  maxPower = maxPower || 1;
+  maxPower = maxPower || str.length;
   var power;
   var hasFound;
-  buf.onceStr(str[0], function () {
+  buf.onceStr(str, function () {
     buf.isBuffering = true
   })
-  var regexp = '['+okStr+']{1,'+maxPower+'}[^'+okNotStr+']$'
+  var regexp = '['+okStr+']{1,'+(maxPower)+'}[^'+okNotStr+']$'
   buf.onceMatch(new RegExp(regexp), function () {
     if (!hasFound) {
       var anchor = buf.pop()
@@ -280,6 +257,8 @@ function lineBlock(block, str, maxPower) {
   })
   return buf.stream
 }
+
+
 function emphasis(str, allowNewLines, excludeFromTokens) {
   var buf = new StreamBuffer2()
 
@@ -369,7 +348,7 @@ function emphasis(str, allowNewLines, excludeFromTokens) {
 
   return buf.stream
 }
-function block(bName, colorizer,  token, showTokens) {
+function colorize(bName, colorizer, token) {
   var buf = new StreamBuffer2()
   var okToken = token && token.match(/[\[\]*]/) ? token.replace(/([\[\]*])/g, '\\$1') : token
   buf.any(function (chunk) {
@@ -384,11 +363,7 @@ function block(bName, colorizer,  token, showTokens) {
       }
 
       if (okBlock) {
-        buf.forEach(function (chunk, i) {
-          if (!showTokens && chunk.type.match(/^token:/)) {
-            chunk.originalStr = chunk.str;
-            chunk.str = '';
-          }
+        buf.forEach(function (chunk) {
           if (chunk.str.length) chunk.str = colorizer(chunk.str)
         })
       }
@@ -398,6 +373,90 @@ function block(bName, colorizer,  token, showTokens) {
   })
   return buf.stream
 }
+function hideToken(token) {
+  var buf = new StreamBuffer2()
+  buf.startBuffer()
+  buf.any(function (chunk) {
+    if (chunk.type.match('token:') && chunk.str.match(token)) {
+      buf.pop()
+    }
+    buf.flush()
+  })
+  return buf.stream
+}
+function surroundBlock(open, close, type, notType) {
+  var buf = new StreamBuffer2()
+  buf.startBuffer()
+  buf.any(function (chunk) {
+    if (chunk.type.match(/^start:/)) {
+      if (!type || chunk.type.match(type)) {
+        if (!notType || !chunk.type.match(notType)) {
+          buf.pop()
+          buf.append({type: 'text', str: open})
+          buf.append(chunk)
+        }
+      }
+    }
+    if (chunk.type.match(/^end:/)) {
+      if (!type || chunk.type.match(type)) {
+        if (!notType || !chunk.type.match(notType)) {
+          buf.append({type: 'text', str: close})
+        }
+      }
+    }
+    buf.flush()
+  })
+  return buf.stream
+}
+function afterBlock(type, required, trim) {
+  var buf = new StreamBuffer2()
+  var isInBlock = false
+  buf.any(function (chunk) {
+    if (chunk.type.match(/^end:/)
+      && chunk.type.match(type)) {
+      buf.startBuffer()
+      isInBlock = true
+    }
+
+    if (!isInBlock) {
+      buf.flush()
+    }
+
+    if (isInBlock) {
+      var text = buf.filterType(/text/)
+      if (text.length()>required.length) {
+        if (text.toString()!==required) {
+          var anchor = buf.shift()
+          if (trim) {
+            var toDelete = []
+            var enough = false
+            buf.forEach(function(c, i){
+              if (!enough && c.type.match(/text/)) {
+                if (trim && c.str.match(trim)) {
+                  toDelete.push(i)
+                } else {
+                  enough = true
+                }
+              }
+            })
+            toDelete.reverse().forEach(function(index){
+              buf.splice(index, 1)
+            })
+          }
+          required.split('').forEach(function(c){
+            buf.prepend({type:'text', str: c})
+          })
+          buf.prepend(anchor)
+        }
+        isInBlock = false
+        buf.stopBuffer()
+        buf.flush()
+      }
+    }
+  })
+  return buf.stream
+}
+
 function StreamBuffer2(stream){
 
   this.buffer = []
@@ -594,6 +653,17 @@ function StreamBuffer2(stream){
     return sub
   }
 
+  this.filterType = function (t){
+    var sub = new StreamBuffer2(that.stream)
+    this.forEach(function(c, i){
+      if (c.type && c.type.match(t)) {
+        sub.buffer.push(that.buffer[i])
+      }
+    })
+    sub.updateChanges__()
+    return sub
+  }
+
   this.concat = function (buf){
     var that = this
     buf.forEach(function (chunk) {
@@ -638,6 +708,10 @@ function StreamBuffer2(stream){
     this.strBuffer = s
   }
 }
+
+
+
+
 /**
  * Helper to produce test and samples
  * @param fn

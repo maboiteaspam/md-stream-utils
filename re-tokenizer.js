@@ -69,13 +69,179 @@ fs.createReadStream('README.md')
   .pipe(block('emphasis', chalk.magenta, '*', false))
 
   .pipe(through2.obj(function(chunk, enc, callback){
-
     this.push(chunk, enc)
     callback()
   }))
+  .pipe(byLine())
+  .pipe(less())
+  .pipe(arrayToStruct())
   .pipe(flattenToString())
   .pipe(process.stdout)
   .on('end', function(){})
+
+
+
+function byLine() {
+  var buf = new StreamBuffer2()
+  buf.startBuffer()
+  buf.any(function (chunk) {
+    if (chunk.str.match(/\n/)) {
+      var line = buf.splice(0)
+      buf.flush()
+      buf.append({
+        type: 'array:node',
+        str: line.toString(),
+        originalToken: line
+      })
+      buf.flush()
+    }
+  })
+  return buf.stream
+}
+function arrayToStruct() {
+  var buf = new StreamBuffer2()
+  buf.any(function (chunk) {
+    if (chunk.type.match(/^array/)) {
+      buf.pop()
+      chunk.originalToken.forEach(function (c) {
+        buf.append(c)
+      })
+    }
+  })
+  return buf.stream
+}
+function less() {
+  var lessBuf = new StreamBuffer2(through2.obj(function(chunk, enc, callback){
+    lessBuf.through(chunk)
+    if (lessBuf.isPaused) lessBuf.moveNext = callback
+    else callback()
+  }, function (callback) {
+    //lessBuf.flush ()
+    //callback() // it is un-finish-able stream
+  }))
+
+  if (process.stdout.isTTY) {
+
+    var stdin = process.stdin;
+    stdin.setRawMode( true );
+    stdin.pause();
+    stdin.setEncoding( 'utf8' );
+    var size = process.stdout.getWindowSize()
+    var width = size[0]
+    var height = size[1]
+    var startLinePosition = 0
+    var curLinesDisplayed = 0
+
+    height--
+
+    var wholeBuf = new StreamBuffer2()
+    wholeBuf.startBuffer()
+
+    var moveUp = function(){
+      if (startLinePosition>0) {
+        curLinesDisplayed=startLinePosition+height
+        startLinePosition--
+        lessBuf.skip()
+        ////console.log(lessBuf.buffer)
+        //var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
+        //sub.forEach(function (line) {
+        //  line.originalToken.forEach(function (c) {
+        //    lessBuf.append(c)
+        //  })
+        //})
+        //lessBuf.updateChanges__()
+        ////console.log('___________ %s', startLinePosition)
+        //////console.log(wholeBuf.buffer.length, sub.buffer.length, startLinePosition, height)
+        ////console.log(lessBuf.strBuffer)
+        ////console.log('----------------')
+        //lessBuf.flush()
+        var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
+        sub.reverse().forEach(function (line, i) {
+          require('readline').cursorTo(process.stdout,
+            0,
+            sub.buffer.length-i-1)
+          require('readline').clearLine(process.stdout, 0)
+          line.originalToken.forEach(function (c) {
+            lessBuf.append(c)
+            lessBuf.flush()
+          })
+        })
+        require('readline').cursorTo(process.stdout,
+          0,
+          sub.buffer.length)
+      }
+    }
+    var moveDown = function(){
+      if (startLinePosition+height<wholeBuf.buffer.length) {
+        var sub = wholeBuf.slice(startLinePosition+height,
+          startLinePosition+height+1)
+        startLinePosition++
+        lessBuf.skip()
+        sub.forEach(function (line) {
+          line.originalToken.forEach(function (c) {
+            lessBuf.append(c)
+          })
+        })
+        lessBuf.flush()
+        lessBuf.resume()
+      }
+    }
+    listenStdin({
+      '\u0003': function(){// ctrl-c ( end of text )
+        process.exit();
+      },
+      '\u001bOA': moveUp,
+      '\u001b[A': moveUp,
+      '\u001bOB': moveDown,
+      '\u001b[B': moveDown,
+      '\u001bOD': function(){}, //left
+      '\u001bOC': function(){} //right
+    })
+    stdin.resume()
+
+    lessBuf.startBuffer()
+    lessBuf.any(function (chunk) {
+      wholeBuf.through(chunk)
+      lessBuf.skip()
+      if (curLinesDisplayed >= startLinePosition
+        && curLinesDisplayed < startLinePosition+height) {
+        var sub = wholeBuf.slice(curLinesDisplayed, curLinesDisplayed+1)
+        sub.forEach(function (line) {
+          line.originalToken.forEach(function (c) {
+            lessBuf.append(c)
+          })
+        })
+        //console.log('ss %s %s %s %s',
+        //  curLinesDisplayed, startLinePosition,
+        //  sub.buffer.length,
+        //  wholeBuf.buffer.length)
+        lessBuf.flush()
+      }
+      if (curLinesDisplayed == startLinePosition+height+1) {
+        lessBuf.pause()
+      }
+      curLinesDisplayed++
+    })
+  }
+
+  return lessBuf.stream
+}
+
+function clearScreen (std){
+  std = std || process.stdout
+  std.write('\033[2J');
+  std.write('\033');
+  std.write('\n');
+}
+function listenStdin(keys){
+  var fn = function( key ){
+    if (key in keys) {
+      keys[key]()
+    }
+  }
+  process.stdin.on( 'data', fn);
+  return fn
+}
 
 
 
@@ -243,6 +409,8 @@ function StreamBuffer2(stream){
   this.buffer = []
   this.strBuffer = ''
   this.isBuffering = false
+  this.isPaused = false
+  this.moveNext = null
   this.onceBlock = []
   this.anyCb = []
   this.onceCb = []
@@ -251,7 +419,8 @@ function StreamBuffer2(stream){
   var that = this
   this.stream = stream || through2.obj(function(chunk, enc, callback){
     that.through(chunk)
-    callback()
+    if (that.isPaused) that.moveNext = callback
+    else callback()
   }, function (callback) {
     that.flush ()
     callback()
@@ -283,10 +452,37 @@ function StreamBuffer2(stream){
     }
   }
 
+  this.toString = function (){
+    return this.strBuffer
+  }
+  this.startBuffer = function (){
+    this.isBuffering = true
+    return this
+  }
+  this.pipe = function (stream){
+    return this.stream.pipe(stream)
+  }
+  this.stopBuffer = function (){
+    this.isBuffering = true
+    return this
+  }
+  this.pause = function (){
+    this.isPaused = true
+    return this
+  }
+  this.resume = function (){
+    var callback = this.moveNext
+    this.isPaused = false
+    this.moveNext = null
+    if (callback) callback()
+    return this
+  }
+
   this.any = function (cb){
     this.anyCb.push({
       cb: cb
     })
+    return this
   }
 
   this.onceBlock = function (block, cb){
@@ -294,6 +490,7 @@ function StreamBuffer2(stream){
       block: block,
       cb: cb
     })
+    return this
   }
 
   this.onceStr = function (strChunk, cb){
@@ -301,6 +498,7 @@ function StreamBuffer2(stream){
       str: strChunk,
       cb: cb
     })
+    return this
   }
 
   this.onceMatch = function (strChunk, cb){
@@ -308,6 +506,7 @@ function StreamBuffer2(stream){
       rx: strChunk,
       cb: cb
     })
+    return this
   }
 
 
@@ -369,6 +568,24 @@ function StreamBuffer2(stream){
     return chunk[0]
   }
 
+  this.slice = function (){
+    var sub = new StreamBuffer2(that.stream)
+    sub.buffer = this.buffer.slice.apply(this.buffer, arguments)
+    // this won t detect white nodes
+    // can read count of white nodes in `sub`
+    // to re splice again of that amount of nodes.
+
+    sub.updateChanges__()
+
+    return sub
+  }
+
+  this.reverse = function (){
+    this.buffer.reverse()
+    this.updateChanges__()
+    return this
+  }
+
   this.splice = function (){
     var sub = new StreamBuffer2(that.stream)
     sub.buffer = [].splice.apply(this.buffer, arguments)
@@ -392,9 +609,9 @@ function StreamBuffer2(stream){
   }
 
   this.forEach = function (then){
-    this.buffer.forEach(function (chunk) {
+    this.buffer.forEach(function (chunk, i) {
       if (then)
-        then(chunk[0])
+        then(chunk[0], i)
     })
     return this
   }
@@ -422,7 +639,7 @@ function StreamBuffer2(stream){
   this.updateChanges__ = function (){
     var s = ''
     this.buffer.forEach(function(c){
-      s += c.str
+      s += c.length ? c[0].str : c.str
     })
     this.strBuffer = s
   }
@@ -435,7 +652,7 @@ function StreamBuffer2(stream){
  */
 function multilineToStream(fn, append){
   var str = multiline.stripIndent(fn) + (append||'')
-  console.log('----'+str+'----')
+  //console.log('----'+str+'----')
   return resumer().queue(str).end()
 }
 

@@ -389,14 +389,19 @@ function block(bName, colorizer,  token, showTokens) {
             chunk.originalStr = chunk.str;
             chunk.str = '';
           }
-          if (chunk.str) {
-            chunk.str = colorizer(chunk.str)
-          }
           if (!showTokens && chunk.type.match(/^token:/)) {
             chunk.originalStr = chunk.str;
             chunk.str = '';
           }
         })
+        var open = ''
+        var close = ''
+        colorizer._styles.forEach(function (style) {
+          open += chalk.styles[style].open
+          close += chalk.styles[style].close
+        })
+        buf.prepend({type: 'token:chalk', str: open})
+        buf.append({type: 'token:chalk', str: close})
       }
 
       buf.isBuffering = false

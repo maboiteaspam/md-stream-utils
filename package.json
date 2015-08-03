@@ -1,6 +1,6 @@
 {
   "name": "md-stream-utils",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Set of utilities to work with Markdown stream.",
   "main": "index.js",
   "scripts": {},

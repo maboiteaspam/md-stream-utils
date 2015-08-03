@@ -6,6 +6,8 @@ The basis of this work come from https://github.com/alanshaw/md-tokenizer
 
 An alternative to https://github.com/chjj/marked
 
+It provide a binary tool to read colorized markdown content with interactive support : `md-colorize`
+
 ## Installation
 Run the following commands to download and install the application:
 
@@ -16,6 +18,19 @@ Run the following commands to download and install the application:
 ```sh   npm i md-stream-utils --save ```
 
 ## Usage
+
+__md-colorize:__ A binary tool to colorize Markdown content. It embed support for interactive navigation like `less`.
+
+    md-colorize [inputfile [outputfile]]
+    
++ Display 'Usage' section from `stdin` with color:
+
+    `cat README.md | md-paragraph -c 'Usage' | md-colorize`
+    
++ Display 'Usage' section from a `file` with color:
+
+    `md-paragraph -c 'Usage' README.md | md-colorize`
+    
 
 __md-block:__ A binary tool to parse Markdown content by block.
 
@@ -48,19 +63,6 @@ __md-paragraph:__ A binary tool to parse Markdown content by paragraph.
     `md-paragraph -c 'Usage' README.md`
 
 
-__md-colorize:__ A binary tool to colorize Markdown content.
-
-    md-colorize [inputfile [outputfile]]
-    
-+ Display 'Usage' section from `stdin` with color:
-
-    `cat README.md | md-paragraph -c 'Usage' | md-colorize`
-    
-+ Display 'Usage' section from a `file` with color:
-
-    `md-paragraph -c 'Usage' README.md | md-colorize`
-
-
 ## API
 
 `md-stream-utils` comes with several stream transform modules.
@@ -74,9 +76,11 @@ module.exports = {
   byBlock: require("./lib/by-block"),
   byParapgraph: require("./lib/by-paragraph"),
   cliColorize: require("./lib/cli-colorize"),
-  toString: require("./lib/to-string"),
   flatten: require("./lib/flatten"),
-  filter: require("./lib/filter")
+  filter: require("./lib/filter"),
+  less: require("./lib/less"),
+  toString: require("./lib/to-string"),
+  toJSON: require("./lib/to-json")
 }
 ```
 
@@ -159,21 +163,6 @@ __cliColorize__
       .pipe(process.stdout)
 ```
 
-__toString__
-
-- Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of strings`.
-- Each push is a `string` representing a `node` or an `array of nodes`.
-
-```js
-    var mdUtils = require('../index.js')
-    
-    process.stdin
-      .pipe(mdUtils.tokenizer())
-      .pipe(mdUtils.cliColorize())
-      .pipe(mdUtils.toString())
-      .pipe(process.stdout)
-```
-
 __flatten__
 
 - Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of nodes`.
@@ -202,6 +191,55 @@ __filter__
       .pipe(mdUtils.filter({type: 'text'}))
       .pipe(mdUtils.cliColorize())
       .pipe(mdUtils.toString())
+      .pipe(process.stdout)
+```
+
+__less__
+
+- Filters a `stream of array of nodes`, they must be `lines`.
+- Controls output buffer with help of `keyup` `keydown` keyboard controls.
+- Each push is an `array of nodes`, a `line` of text.
+
+```js
+    var mdUtils = require('../index.js')
+        
+    process.stdin
+      .pipe(mdUtils.tokenizer())
+      .pipe(mdUtils.filter({type: 'text'}))
+      .pipe(mdUtils.cliColorize())
+      .pipe(mdUtils.byLine())
+      .pipe(mdUtils.less())
+      .pipe(mdUtils.toString())
+      .pipe(process.stdout)
+```
+
+__toString__
+
+- Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of strings`.
+- Each push is a `string` representing a `node` or an `array of nodes`.
+
+```js
+    var mdUtils = require('../index.js')
+    
+    process.stdin
+      .pipe(mdUtils.tokenizer())
+      .pipe(mdUtils.cliColorize())
+      .pipe(mdUtils.toString())
+      .pipe(process.stdout)
+```
+
+__toJSON__
+
+- Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of json strings`.
+- Each push is a `json string` representing a `node` or an `array of nodes`.
+
+```js
+    var mdUtils = require('../index.js')
+    
+    process.stdin
+      .pipe(mdUtils.tokenizer())
+      .pipe(mdUtils.cliColorize())
+      .pipe(mdUtils.toJSON())
       .pipe(process.stdout)
 ```
 

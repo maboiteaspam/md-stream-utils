@@ -8,6 +8,8 @@ An alternative to https://github.com/chjj/marked
 
 It provide a binary tool to read colorized markdown content with interactive support : `md-colorize`
 
+![Interactive MD support](https://raw.githubusercontent.com/maboiteaspam/md-stream-utils/gh-pages/screencast.gif)
+
 ## Installation
 Run the following commands to download and install the application:
 

@@ -27,7 +27,8 @@ multilineToStream(function () {/*
 
  */})
 ;
-fs.createReadStream('README.md')
+fs.createReadStream('bench.md')
+//fs.createReadStream('README.md')
   //;
   //fs.createReadStream('README2.md')
 
@@ -262,7 +263,7 @@ function lineBlock(block, str, maxPower) {
 function emphasis(str, allowNewLines, excludeFromTokens) {
   var buf = new StreamBuffer2()
 
-  buf.isBuffering = true
+  buf.startBuffer()
   var okStr = str.match(/[\[\]*]/) ? str.replace(/([\[\]*])/g, '\\$1') : str
   var okNotStr = str.match(/[\[\]*]/) ? str[0].replace(/([\[\]*])/g, '\\$1') : str[0]
 
@@ -285,6 +286,24 @@ function emphasis(str, allowNewLines, excludeFromTokens) {
   buf.onceStr(str, function (chunk) {
     if( chunk.type.match(/^token:/) ) {
       buf.flush()
+    }
+  })
+  if (!allowNewLines) {
+    buf.onceStr('\n', function () {
+      buf.flush()
+    })
+  }
+  // this is to control buffering
+  // this transforms is a bit special as it buffer since ever.
+  // it looks backward for the entire pattern
+  // as of sometimes it is multiline,
+  // the buffer may end being not flushed soon enough.
+  //
+  // with this change, that should be fixed.
+  buf.onceStr('\n', function () {
+    var nl = buf.match(/\n/g)
+    if (nl.length) {
+      if (!buf.match(okStr)) buf.flush()
     }
   })
 

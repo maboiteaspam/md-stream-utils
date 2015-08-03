@@ -8,6 +8,8 @@ module.exports = {
   byParapgraph: require("./lib/by-paragraph"),
   cliColorize: require("./lib/cli-colorize"),
   toString: require("./lib/to-string"),
+  toJSON: require("./lib/to-json"),
+  less: require("./lib/less"),
   flatten: require("./lib/flatten"),
   filter: require("./lib/filter")
 }

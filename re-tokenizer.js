@@ -27,8 +27,8 @@ multilineToStream(function () {/*
 
  */})
 ;
-fs.createReadStream('bench.md')
-//fs.createReadStream('README.md')
+//fs.createReadStream('bench.md')
+fs.createReadStream('README.md')
   //;
   //fs.createReadStream('README2.md')
 
@@ -55,6 +55,7 @@ fs.createReadStream('bench.md')
   .pipe(emphasis('__', false,  '`'))
   .pipe(emphasis('_', false,  '`'))
 
+  // for lost-tokens, those that looks likes token, but are not
   .pipe(through2.obj(function(chunk, enc, callback){
     if (chunk.type.match(/maybe:token/)) {
       chunk.str = chalk.red.bold(chunk.str)
@@ -68,18 +69,18 @@ fs.createReadStream('bench.md')
   .pipe(colorize('emphasis', chalk.bold, '_'))
   .pipe(colorize('emphasis', chalk.blue, '-'))
   .pipe(colorize('emphasis', chalk.magenta, '*'))
+
   .pipe(hideToken(/[`_#-\*]+/))
   .pipe(afterBlock('heading','\n\n','\n'))
   .pipe(surroundBlock('==','', 'heading'))
   .pipe(surroundBlock('>>>','<<<', null, 'heading'))
-  .pipe(through2.obj(function(chunk, enc, callback){
-    this.push(chunk, enc)
-    callback()
-  }))
+
   .pipe(byLine())
   .pipe(less())
+
   .pipe(arrayToStruct())
   .pipe(flattenToString())
+
   .pipe(process.stdout)
   .on('end', function(){})
 
@@ -115,63 +116,57 @@ function arrayToStruct() {
   return buf.stream
 }
 function less() {
+
+  var stdin = process.stdin;
+  stdin.setRawMode( true );
+  stdin.pause();
+  stdin.setEncoding( 'utf8' );
+  var size = process.stdout.getWindowSize()
+  var height = size[1]
+  height--
+
+  var wholeBuf = new StreamBuffer2()
+  wholeBuf.startBuffer()
+
+  var i = 0
   var lessBuf = new StreamBuffer2(through2.obj(function(chunk, enc, callback){
-    lessBuf.through(chunk)
-    if (lessBuf.isPaused) lessBuf.moveNext = callback
-    else callback()
+    wholeBuf.through(chunk)
+    if (i<height) {
+      this.push(chunk)
+    }
+    i++
+    callback()
   }, function (callback) {
     //lessBuf.flush ()
     //callback() // it is un-finish-able stream
   }))
 
-  if (process.stdout.isTTY) {
-
-    var stdin = process.stdin;
-    stdin.setRawMode( true );
-    stdin.pause();
-    stdin.setEncoding( 'utf8' );
-    var size = process.stdout.getWindowSize()
-    var height = size[1]
     var startLinePosition = 0
-    var curLinesDisplayed = 0
 
-    height--
-
-    var wholeBuf = new StreamBuffer2()
-    wholeBuf.startBuffer()
+    var printToScreen = function(sub){
+      require('readline').cursorTo(process.stdout, 0, 0)
+      require('readline').clearScreenDown(process.stdout)
+      sub.forEach(function (line) {
+        line.originalToken.forEach(function (c) {
+          lessBuf.append(c)
+        })
+        lessBuf.flush()
+      })
+      require('readline').cursorTo(process.stdout, 0, height)
+    }
 
     var moveUp = function(){
       if (startLinePosition>0) {
-        curLinesDisplayed=startLinePosition+height
         startLinePosition--
-        lessBuf.skip()
         var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
-        sub.reverse().forEach(function (line, i) {
-          require('readline').cursorTo(process.stdout,
-            0, sub.buffer.length-i-1)
-          require('readline').clearLine(process.stdout, 0)
-          line.originalToken.forEach(function (c) {
-            lessBuf.append(c)
-            lessBuf.flush()
-          })
-        })
-        require('readline').cursorTo(process.stdout,
-          0, sub.buffer.length)
+        printToScreen(sub)
       }
     }
     var moveDown = function(){
       if (startLinePosition+height<wholeBuf.buffer.length) {
-        var sub = wholeBuf.slice(startLinePosition+height,
-          startLinePosition+height+1)
         startLinePosition++
-        lessBuf.skip()
-        sub.forEach(function (line) {
-          line.originalToken.forEach(function (c) {
-            lessBuf.append(c)
-          })
-        })
-        lessBuf.flush()
-        lessBuf.resume()
+        var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
+        printToScreen(sub)
       }
     }
     listenStdin({
@@ -186,27 +181,6 @@ function less() {
       '\u001bOC': function(){} //right
     })
     stdin.resume()
-
-    lessBuf.startBuffer()
-    lessBuf.any(function (chunk) {
-      wholeBuf.through(chunk)
-      lessBuf.skip()
-      if (curLinesDisplayed >= startLinePosition
-        && curLinesDisplayed < startLinePosition+height) {
-        var sub = wholeBuf.slice(curLinesDisplayed, curLinesDisplayed+1)
-        sub.forEach(function (line) {
-          line.originalToken.forEach(function (c) {
-            lessBuf.append(c)
-          })
-        })
-        lessBuf.flush()
-      }
-      if (curLinesDisplayed == startLinePosition+height+1) {
-        lessBuf.pause()
-      }
-      curLinesDisplayed++
-    })
-  }
 
   return lessBuf.stream
 }

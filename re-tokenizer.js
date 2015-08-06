@@ -344,24 +344,32 @@ function emphasis(str, allowNewLines, excludeFromTokens) {
 function colorize(bName, colorizer, token) {
   var buf = new StreamBuffer2()
   var okToken = token && token.match(/[\[\]*]/) ? token.replace(/([\[\]*])/g, '\\$1') : token
+  var isInblock = false
+  var hasSeenText = false
   buf.any(function (chunk) {
-    if (chunk.type.match('start:'+bName)) {
-      buf.isBuffering = true
-    }else if (chunk.type.match('end:'+bName)) {
-
-      var okBlock = !token
-      if (token) {
-        var last = buf.getLastToken(/^token:/);
-        okBlock = last && last.str.match(okToken);
+    if (!isInblock) {
+      if (chunk.type.match('start:'+bName)) {
+        isInblock = true
+        hasSeenText = false
+      }else if (chunk.type.match('end:'+bName)) {
+        isInblock = false
       }
+    } else {
+      hasSeenText = hasSeenText || !chunk.type.match(/^token:/)
 
-      if (okBlock) {
-        buf.forEach(function (chunk) {
-          if (chunk.str.length) chunk.str = colorizer(chunk.str)
-        })
+      if (chunk.type.match('end:'+bName)) {
+        isInblock = false
+      } else if (!hasSeenText
+        && chunk.type.match(/^token:/)
+        && !chunk.str.match(okToken)) {
+        isInblock = false
+        hasSeenText = false
       }
-
-      buf.isBuffering = false
+    }
+  })
+  buf.any(function (chunk) {
+    if (isInblock) {
+      if (chunk.str.length) chunk.str = colorizer(chunk.str)
     }
   })
   return buf.stream

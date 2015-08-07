@@ -11,19 +11,12 @@ var argv = require('minimist')(process.argv.slice(2));
 
 
 multilineToStream(function () {/*
- ### ## Heading 1
- Some *italic* and __bold__ in the __title
- **and** also in__ some _text_ -tomate-
- ### ## Heading 2
 
- #*Usage*
+ *Binary install*
+ ```sh   npm i md-stream-utils -g ```
 
- __README__
-
- `md-block -c 'Usage' -t 'heading' README.md`
-
- -c || --dd sdfsd hhhh
- -j || --ff sdfsd iiii
+ *API install*
+ ```sh   npm i md-stream-utils --save ```
 
  */})
 ;
@@ -34,7 +27,7 @@ fs.createReadStream('README.md')
 
   .pipe(stringToStruct())
   .pipe(through2.obj(function(chunk, enc, callback){
-    if (chunk.str.match(/[-_\*~#]/)) {
+    if (chunk.str.match(/[-_\*~#`]/)) {
       chunk.type = 'maybe:token'
     }
     this.push(chunk, enc)
@@ -45,36 +38,46 @@ fs.createReadStream('README.md')
   //.pipe(lineBlock('dash-list', '+'))
   //.pipe(lineBlock('dash-list', '-'))
 
-  .pipe(emphasis('```', true))
-  .pipe(emphasis('``', true))
-  .pipe(emphasis('`', false))
-  .pipe(emphasis('--', false,  '`'))
-  .pipe(emphasis('-', false,  '`'))
-  .pipe(emphasis('**', false,  '`'))
-  .pipe(emphasis('*', false,  '`'))
-  .pipe(emphasis('__', false,  '`'))
-  .pipe(emphasis('_', false,  '`'))
+  //.pipe(emphasis('```', true))
+  //.pipe(emphasis('``', true))
+  //.pipe(emphasis('`', false))
+  //.pipe(emphasis('--', false,  '`'))
+  //.pipe(emphasis('-', false,  '`'))
+  //.pipe(emphasis('**', false,  '`'))
+  //.pipe(emphasis('*', false,  '`'))
+  //.pipe(emphasis('__', false,  '`'))
+  //.pipe(emphasis('_', false,  '`'))
 
+  .pipe(emphasis2('```', true))
+  .pipe(emphasis2('`', false))
+  .pipe(emphasis2('--', false))
+  .pipe(emphasis2('-', false))
+  .pipe(emphasis2('**', false))
+  .pipe(emphasis2('*', false))
+  .pipe(emphasis2('__', false))
+  .pipe(emphasis2('_', false))
+  .pipe(cleanEmphasis('```', /./))
+  .pipe(cleanEmphasis('`', /./))
   // for lost-tokens, those that looks likes token, but are not
-  .pipe(through2.obj(function(chunk, enc, callback){
-    if (chunk.type.match(/maybe:token/)) {
-      chunk.str = chalk.red.bold(chunk.str)
-    }
-    this.push(chunk, enc)
-    callback()
-  }))
+  //.pipe(through2.obj(function(chunk, enc, callback){
+  //  if (chunk.type.match(/maybe:token/)) {
+  //    chunk.str = chalk.red.bold(chunk.str)
+  //  }
+  //  this.push(chunk, enc)
+  //  callback()
+  //}))
 
   .pipe(colorize('heading', chalk.cyan))
   .pipe(colorize('emphasis', chalk.white.italic, '`'))
-  .pipe(colorize('emphasis', chalk.bold, '_'))
+  .pipe(colorize('emphasis', chalk.bold.blue, '_'))
   .pipe(colorize('emphasis', chalk.blue, '-'))
   .pipe(colorize('emphasis', chalk.magenta, '*'))
-
+  //
   .pipe(hideToken(/[`_#-\*]+/))
   .pipe(afterBlock('heading','\n\n','\n'))
   .pipe(surroundBlock('==','', 'heading'))
   .pipe(surroundBlock('>>>','<<<', null, 'heading'))
-
+  //
   .pipe(byLine())
   .pipe(less())
 
@@ -341,6 +344,98 @@ function emphasis(str, allowNewLines, excludeFromTokens) {
 
   return buf.stream
 }
+function emphasis2(str, allowNewLines) {
+  var buf = new StreamBuffer2()
+
+  buf.startBuffer()
+  var isInBlock = false
+  buf.onceStr(str, function (chunk) {
+    if (chunk.type=='maybe:token') {
+      if (!isInBlock) {
+        buf.tail(str.length)
+        buf.startBuffer()
+        isInBlock = true
+      } else {
+
+        if (buf.strLength()<=str.length*2) {
+          buf.flush()
+          isInBlock = false
+
+        } else {
+          var startTokens = buf.splice(0, str.length)
+            .forEach(function(c){
+              c.type = 'token:emphasis'
+            }).prepend({type:'start:emphasis', power: str.length, tokenStr: str})
+
+          var endTokens = buf.splice(-str.length)
+            .forEach(function(c){
+              c.type = 'token:emphasis'
+            }).append({type:'end:emphasis', power: str.length, tokenStr: str})
+
+          startTokens.flush()
+          buf.flush()
+          endTokens.flush()
+
+          isInBlock = false
+        }
+
+      }
+    }
+  })
+  buf.onceStr('\n', function (chunk) {
+    if (isInBlock && !allowNewLines) {
+      buf.flush()
+      isInBlock = false
+    }else if (!isInBlock) {
+      buf.flush()
+    }
+  })
+  buf.any(function (chunk) {
+    if (!isInBlock && buf.strLength() > str.length*2) {
+      buf.tail(str.length*2)
+      isInBlock = false
+    }
+  })
+
+  return buf.stream
+}
+function cleanEmphasis(str, excludedTokens) {
+  var buf = new StreamBuffer2()
+  var isInBlock = false
+  buf.any(function (chunk) {
+    if (chunk.type==='start:emphasis' && chunk.tokenStr===str) {
+      buf.tail(str.length)
+      buf.startBuffer()
+    }
+
+    if (chunk.type==='end:emphasis' && chunk.tokenStr===str) {
+
+      var toRemove = []
+      buf.forEach(function (c, i) {
+        if (['token:emphasis','maybe:token'].indexOf(c.type)>-1
+          && !c.str.match(str[0])) {
+          c.type = 'text'
+        }
+        if (['start:emphasis','end:emphasis'].indexOf(c.type)>-1
+          && c.tokenStr!==str) {
+          toRemove.push(i-toRemove.length)
+        }
+      })
+      toRemove.forEach(function(i){
+        buf.splice(i,1)
+      })
+      buf.flush()
+      buf.stopBuffer()
+      isInBlock = false
+
+    }
+  })
+
+  return buf.stream
+}
+
+
+
 function colorize(bName, colorizer, token) {
   var buf = new StreamBuffer2()
   var okToken = token && token.match(/[\[\]*]/) ? token.replace(/([\[\]*])/g, '\\$1') : token
@@ -465,6 +560,8 @@ function StreamBuffer2(stream){
   this.isBuffering = false
   this.isPaused = false
   this.moveNext = null
+
+
   this.onceBlock = []
   this.anyCb = []
   this.onceCb = []
@@ -481,12 +578,13 @@ function StreamBuffer2(stream){
   });
 
   this.through = function (chunk){
+
     !('str' in chunk) && (chunk.str = '')
     var args = [].slice.call(arguments);
+
     this.buffer.push(args)
     this.strBuffer += chunk.str
 
-    var that = this
     this.anyCb.forEach(function(o){
       o.cb(chunk)
     })
@@ -517,7 +615,7 @@ function StreamBuffer2(stream){
     return this.stream.pipe(stream)
   }
   this.stopBuffer = function (){
-    this.isBuffering = true
+    this.isBuffering = false
     return this
   }
   this.pause = function (){
@@ -532,13 +630,6 @@ function StreamBuffer2(stream){
     return this
   }
 
-  this.any = function (cb){
-    this.anyCb.push({
-      cb: cb
-    })
-    return this
-  }
-
   this.onceBlock = function (block, cb){
     this.onceBlock.push({
       block: block,
@@ -547,6 +638,12 @@ function StreamBuffer2(stream){
     return this
   }
 
+  this.any = function (cb){
+    this.anyCb.push({
+      cb: cb
+    })
+    return this
+  }
   this.onceStr = function (strChunk, cb){
     this.onceStrCb.push({
       str: strChunk,
@@ -554,7 +651,6 @@ function StreamBuffer2(stream){
     })
     return this
   }
-
   this.onceMatch = function (strChunk, cb){
     this.onceCb.push({
       rx: strChunk,
@@ -664,6 +760,16 @@ function StreamBuffer2(stream){
     sub.updateChanges__()
     return sub
   }
+  this.filterStr = function (t){
+    var sub = new StreamBuffer2(that.stream)
+    this.forEach(function(c, i){
+      if (c.str && c.str.match(t)) {
+        sub.buffer.push(that.buffer[i])
+      }
+    })
+    sub.updateChanges__()
+    return sub
+  }
 
   this.concat = function (buf){
     var that = this
@@ -692,6 +798,14 @@ function StreamBuffer2(stream){
     })
     this.buffer = []
     this.strBuffer = ''
+    return this
+  }
+  this.tail = function (l){
+    var tail = this.splice(-l)
+    this.flush()
+    tail.forEach(function(c){
+      that.append(c)
+    })
     return this
   }
 

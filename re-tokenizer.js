@@ -55,9 +55,9 @@ fs.createReadStream('README.md')
 
   .pipe(stringToStruct())
 
-  .pipe(markPossibleTokens(['-','_','*','#','~','`']))
-
   .pipe(pumpable.stream)
+
+  .pipe(markPossibleTokens(['-','_','*','#','~','`']))
 
   .pipe(applyLineBlock('heading', '######'))
   .pipe(applyLineBlock('heading', '#####'))
@@ -105,9 +105,9 @@ fs.createReadStream('README.md')
   .pipe(hideToken('codeblock', /.+/))
   .pipe(afterBlock('heading','\n\n','\n'))
 
-  .pipe(surroundBlock('==','==', 'emphasis'))
+  //.pipe(surroundBlock('==','==', 'emphasis'))
   .pipe(surroundBlock('==','', 'heading'))
-  .pipe(surroundBlock('>>>','<<<', null, 'heading'))
+  //.pipe(surroundBlock('>>>','<<<', null, 'heading'))
 
   //.pipe(revealMarkup('emphasis'))
   //.pipe(revealMarkup('listitem'))
@@ -188,13 +188,13 @@ function less(pumpable) {
   var i = 0
   var lessBuf = new StreamBuffer2(through2.obj(function(chunk, enc, callback){
     wholeBuf.through(chunk)
-    if (i<height) {
-      this.push(chunk)
-    } else if(i===height) {
-      pumpable.pause()
-      pumpMoreLines(20)
-    }
     i++
+    if(i+1===height) {
+      var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
+      printToScreen(sub)
+      pumpMoreLines(10)
+      pumpable.pause()
+    }
     callback()
   }, function (callback) {
     //lessBuf.flush ()
@@ -206,29 +206,35 @@ function less(pumpable) {
   var printToScreen = function(sub){
     require('readline').cursorTo(process.stdout, 0, 0)
     require('readline').clearLine(process.stdout, 1)
+    lessBuf.skip()
     var printedHeight = 0
     sub.forEach(function (line) {
       var linelen = 0
       line.originalToken.forEach(function (c) {
         c = c[0]
-        linelen+= c.str.length
-      })
-      line.originalToken.forEach(function (c) {
-        c = c[0]
-        if (printedHeight<=height) {
-          lessBuf.append(c)
-          lessBuf.flush()
-          require('readline').clearLine(process.stdout, 1)
-        }
         if (c.str.match(/\n/)) {
-          printedHeight+=parseInt(linelen/width)
-          printedHeight+=c.str.match(/(\n)/g).length
           linelen = 0
+          require('readline').cursorTo(process.stdout, 0, printedHeight)
+          require('readline').clearLine(process.stdout, 1)
+          printedHeight++
+          lessBuf.flush()
+        } else if (printedHeight<=height) {
+          if (linelen+c.str.length>=width) {
+            require('readline').cursorTo(process.stdout, 0, printedHeight)
+            require('readline').clearLine(process.stdout, 1)
+            printedHeight++
+            lessBuf.flush()
+            linelen =0
+          }
+          linelen+=c.str.length
+          lessBuf.append(c)
         }
       })
     })
     require('readline').cursorTo(process.stdout, 0, height)
+    require('readline').clearLine(process.stdout, 1)
   }
+  printToScreen = _.throttle(printToScreen, 20, true)
   var moveUp = _.throttle(function(){
     if (startLinePosition>0) {
       startLinePosition--
@@ -243,7 +249,7 @@ function less(pumpable) {
       printToScreen(sub)
     }
     if (wholeBuf.buffer.length-startLinePosition-height<=10) {
-      pumpMoreLines(2)
+      pumpMoreLines(1)
     }
   }, 30, true)
   listenStdin({
@@ -258,7 +264,7 @@ function less(pumpable) {
     '\u001bOC': function(){} //right
   })
   stdin.resume()
-  pumpable.resume()
+  pumpMoreLines(height)
 
   return lessBuf.stream
 }
@@ -552,18 +558,29 @@ function colorizeContent(colorizer) {
   return function(buf) {
     var text = buf.filterType('text');
     var tag = buf.first().type.split(':')[1]
-    text.first().prepend = open
-    text.last().append = close
+    text.first().prepend = (text.first().prepend||'') + open
+    text.last().append = close + (text.last().append||'')
     buf.filterType(/^end:/).filterNotType('end:'+tag).forEach(function(c, i){
-      c.append = c.append ? c.append+open : open
+      c.prepend = (c.prepend||'') + open
     })
+    buf.filterStr(/\n/).forEach(function(c, i){
+      c.prepend = (c.prepend||'') + open
+    })
+    buf.last().prepend = close + (buf.last().prepend||'')
   }
 }
 function colorizeToken(colorizer) {
+  var open = '';
+  var close = '';
+  colorizer._styles.forEach(function(style){
+    open += chalk.styles[style].open
+    close = chalk.styles[style].close + close
+  })
   return function(buf) {
     var tag = buf.first().type.split(':')[1]
     buf.filterType('token:'+tag).forEach(function(c){
-      c.str = colorizer(c.str)
+      c.prepend = open
+      c.append = close
     })
   }
 }
@@ -1049,6 +1066,19 @@ function stringToStruct(){
 function flattenToString(){
   return through2.obj(function (chunk, enc, callback) {
     this.push((chunk.prepend || '') + chunk.str + (chunk.append || ''))
+    callback()
+  })
+}
+
+/**
+ * Flatten structs to string
+ * Useful to pipe to stdout or similar
+ *
+ * @returns {*}
+ */
+function flattenToJson(){
+  return through2.obj(function (chunk, enc, callback) {
+    this.push(JSON.stringify(chunk)+'\n')
     callback()
   })
 }

@@ -192,8 +192,8 @@ function less(pumpable) {
     if(i+1===height) {
       var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
       printToScreen(sub)
-      pumpMoreLines(10)
       pumpable.pause()
+      pumpMoreLines(10)
     }
     callback()
   }, function (callback) {
@@ -249,9 +249,11 @@ function less(pumpable) {
       printToScreen(sub)
     }
     if (wholeBuf.buffer.length-startLinePosition-height<=10) {
-      pumpMoreLines(1)
+      pumpable.pause()
+      pumpMoreLines(5)
     }
   }, 30, true)
+  stdin.resume()
   listenStdin({
     '\u0003': function(){// ctrl-c ( end of text )
       process.exit();
@@ -263,7 +265,6 @@ function less(pumpable) {
     '\u001bOD': function(){}, //left
     '\u001bOC': function(){} //right
   })
-  stdin.resume()
   pumpMoreLines(height)
 
   return lessBuf.stream
@@ -291,14 +292,10 @@ function markPossibleTokens(tokens) {
 }
 function applyLineBlock(tag, token, loosy) {
   var buf = new StreamBuffer2()
-  var isInBlock = true
   buf.startBuffer()
   buf.onceStr('\n', function () {
-    if (!isInBlock) {
-      buf.flush().startBuffer()
-    } else if(isInBlock && buf.strLength()>=token.length) {
-      var startTokens = buf.slice(0, token.length+10)
-        .filterNotType('token:');
+    if(buf.strLength()>token.length) {
+      var startTokens = buf.slice(0, token.length+10).filterNotType('token:');
       if ( !loosy && startTokens.filterStr(token[0]).length()===token.length
         || loosy && startTokens.substr(0, token.length)===token) {
         var preNl = null
@@ -323,28 +320,8 @@ function applyLineBlock(tag, token, loosy) {
         if (preNl) buf.prepend(preNl)
         if (postNl) buf.append(postNl)
       }
-      buf.flush()
-      isInBlock = false
     }
-  })
-  buf.not('\n', function () {
-    if (buf.strLength()>=token.length+2) {
-      var startTokens = buf.slice(0, token.length+1)
-        .filterNotType('token:')
-      var endTokens = buf.slice(-token.length-1)
-        .filterNotType('token:')
-      if (!isInBlock && startTokens.substr(0, token.length)===token) {
-        isInBlock = true
-      } else if (!isInBlock && endTokens.substr(-token.length)===token) {
-        isInBlock = true
-        buf.tail(token.length+1)
-      //} else if (isInBlock) {
-      //  buf.flush()
-      //  isInBlock = false
-      //} else if (!isInBlock) {
-      //  isInBlock = true
-      }
-    }
+    buf.flush()
   })
   return buf.stream
 }
@@ -417,9 +394,8 @@ function applyTagBlock(tag, str, allowNewLines) {
     }
   })
   buf.any(function (chunk) {
-    if (!isInBlock && buf.strLength() > str.length*2) {
+    if (!isInBlock && buf.strLength() > str.length) {
       buf.tail(str.length*2)
-      isInBlock = false
     }
   })
 
@@ -497,7 +473,7 @@ function removeFrontSpace() {
 }
 function fence(regularSpaceCnt, firstLineSpaceCnt) {
   if (firstLineSpaceCnt===null) {
-    firstLineSpaceCnt = spaceCnt
+    firstLineSpaceCnt = regularSpaceCnt
   }
   return function (buf) {
     var index = 0
@@ -534,7 +510,7 @@ function extractBlock(tag, token, then) {
   var buf = new StreamBuffer2()
   var isInBlock = false
   buf.any(function (chunk) {
-    if (chunk.type==='start:'+tag && (!token || chunk.tokenStr.match(token))) {
+    if (!isInBlock && chunk.type==='start:'+tag && (!token || chunk.tokenStr.match(token))) {
       buf.tail(1).startBuffer()
       isInBlock = true
     } else if (isInBlock && chunk.type==='end:'+tag && (!token || chunk.tokenStr.match(token))) {
@@ -558,8 +534,10 @@ function colorizeContent(colorizer) {
   return function(buf) {
     var text = buf.filterType('text');
     var tag = buf.first().type.split(':')[1]
-    text.first().prepend = (text.first().prepend||'') + open
-    text.last().append = close + (text.last().append||'')
+    if (text.first()) {
+      text.first().prepend = (text.first().prepend||'') + open
+      text.last().append = close + (text.last().append||'')
+    }
     buf.filterType(/^end:/).filterNotType('end:'+tag).forEach(function(c, i){
       c.prepend = (c.prepend||'') + open
     })
@@ -673,6 +651,8 @@ function afterBlock(type, required, trim) {
 
 function StreamBuffer2(stream){
 
+  var caller = getCallerLocation()
+
   this.buffer = []
   this.strBuffer = ''
   this.isBuffering = false
@@ -702,7 +682,7 @@ function StreamBuffer2(stream){
       fn(chunk)
     })
 
-    if (!this.isBuffering && !this.isPaused) {
+    if (!this.isBuffering) {
       this.flush()
     }
   }
@@ -1081,4 +1061,21 @@ function flattenToJson(){
     this.push(JSON.stringify(chunk)+'\n')
     callback()
   })
+}
+
+function getCallerLocation () {
+
+  var path = require('path')
+  var stack = new Error().stack.split('\n');
+  stack.shift();stack.shift();stack.shift();
+  var caller = stack.shift()
+  if (!caller || !caller.length) {
+
+    console.error('please report')
+    console.error(new Error().stack)
+
+    throw 'that is so weird.'
+  }
+
+  return caller;
 }

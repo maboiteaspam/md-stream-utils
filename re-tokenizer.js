@@ -189,7 +189,7 @@ function less(pumpable) {
   var lessBuf = new StreamBuffer2(through2.obj(function(chunk, enc, callback){
     wholeBuf.through(chunk)
     i++
-    if(i+1===height) {
+    if(i===height) {
       var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
       printToScreen(sub)
       pumpable.pause()
@@ -250,7 +250,7 @@ function less(pumpable) {
     }
     if (wholeBuf.buffer.length-startLinePosition-height<=10) {
       pumpable.pause()
-      pumpMoreLines(5)
+      pumpMoreLines(4)
     }
   }, 30, true)
   stdin.resume()
@@ -265,7 +265,7 @@ function less(pumpable) {
     '\u001bOD': function(){}, //left
     '\u001bOC': function(){} //right
   })
-  pumpMoreLines(height)
+  pumpMoreLines(height+5)
 
   return lessBuf.stream
 }
@@ -394,7 +394,8 @@ function applyTagBlock(tag, str, allowNewLines) {
     }
   })
   buf.any(function (chunk) {
-    if (!isInBlock && buf.strLength() > str.length) {
+    // 40 is a very arbitrary value ! too low, it will call too often and clutter the node loop
+    if (!isInBlock && buf.strLength() > 40) {
       buf.tail(str.length*2)
     }
   })

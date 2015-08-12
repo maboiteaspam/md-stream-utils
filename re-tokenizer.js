@@ -6,6 +6,25 @@ var chalk = require('chalk')
 var _ = require('underscore')
 var resumer = require('resumer')
 var multiline = require("multiline")
+RegExp.quote = require('regexp-quote')
+RegExp.fromStr = function (str, flags){
+  if (_.isString(str)) {
+    return new RegExp(RegExp.quote(str), flags)
+  }
+  return str
+}
+RegExp.startsWith = function (str, flags){
+  if (_.isString(str)) {
+    return new RegExp('^'+RegExp.quote(str), flags)
+  }
+  return str
+}
+RegExp.endsWith = function (str, flags){
+  if (_.isString(str)) {
+    return new RegExp(RegExp.quote(str)+'$', flags)
+  }
+  return str
+}
 var argv = require('minimist')(process.argv.slice(2));
 
 
@@ -59,17 +78,12 @@ fs.createReadStream('README.md')
 
   .pipe(markPossibleTokens(['-','_','*','#','~','`']))
 
-  .pipe(applyLineBlock('heading', '######'))
-  .pipe(applyLineBlock('heading', '#####'))
-  .pipe(applyLineBlock('heading', '####'))
-  .pipe(applyLineBlock('heading', '###'))
-  .pipe(applyLineBlock('heading', '##'))
-  .pipe(applyLineBlock('heading', '#'))
-
-  .pipe(applyLineBlock('listitem', '- ', true))
-  .pipe(applyLineBlock('listitem', '+ ', true))
-
-  .pipe(applyLineBlock('linecodeblock', '    ', true))
+  .pipe(byLine())
+  .pipe(applyLineBlock('heading', /^(#{1,6})/i))
+  .pipe(applyLineBlock('listitem', /^\s*([\-+]\s)/i))
+  .pipe(applyLineBlock('listitem', /^\s*([0-9]+\.\s)/i))
+  .pipe(applyLineBlock('linecodeblock', /^([ ]{4})/i))
+  .pipe(arrayToStruct())
 
   .pipe(applyTagBlock('codeblock', '```', true))
   .pipe(applyTagBlock('codeblock', '`', false))
@@ -109,7 +123,7 @@ fs.createReadStream('README.md')
   .pipe(surroundBlock('==','', 'heading'))
   //.pipe(surroundBlock('>>>','<<<', null, 'heading'))
 
-  //.pipe(revealMarkup('emphasis'))
+  //.pipe(revealMarkup('linecodeblock'))
   //.pipe(revealMarkup('listitem'))
   //.pipe(revealMarkup('heading'))
   //.pipe(revealMarkup('codeblock'))
@@ -290,38 +304,38 @@ function markPossibleTokens(tokens) {
     callback()
   })
 }
-function applyLineBlock(tag, token, loosy) {
+function applyLineBlock(tag, token) {
   var buf = new StreamBuffer2()
-  buf.startBuffer()
-  buf.onceStr('\n', function () {
-    if(buf.strLength()>token.length) {
-      var startTokens = buf.slice(0, token.length+10).filterNotType('token:');
-      if ( !loosy && startTokens.filterStr(token[0]).length()===token.length
-        || loosy && startTokens.substr(0, token.length)===token) {
-        var preNl = null
-        var postNl = null
-        if (buf.first().str.match(/\n/)) {
-          preNl = buf.shift()
+  buf.any(function (chunk) {
+    if(chunk.str.length>1) {
+      var tokenMatch = chunk.str.match(RegExp.fromStr(token))
+      if ( tokenMatch && tokenMatch.length) {
+        var sub = new StreamBuffer2()
+        sub.buffer = chunk.originalToken;
+
+        if ( !sub.slice(tokenMatch.index, tokenMatch[0].length).filterType('token:').length()) {
+          var postNl = sub.pop()
+          var e = 0
+          sub.splice(0).forEach(function(c, i){
+            if (i>=tokenMatch.index
+              && !c.type.match(/token:/)
+              && c.str===tokenMatch[1][e]
+              && e<tokenMatch[1].length) {
+              c.type = 'token:'+tag
+              e++
+            }
+          }).prepend({type:'start:'+tag, power: tokenMatch[1].length, tokenStr: tokenMatch[1]})
+            .append({type:'end:'+tag, power: tokenMatch[1].length, tokenStr: tokenMatch[1]})
+            .forEach(function(c){
+              sub.append(c)
+            })
+          if (postNl) sub.append(postNl)
+          chunk.originalToken = [].concat(sub.buffer)
+
+          sub.skip()
         }
-        if (buf.last().str.match(/\n/)) {
-          postNl = buf.pop()
-        }
-        var e = 0
-        buf.splice(0).forEach(function(c, i){
-          if (!c.type.match(/token:/) && c.str===token[e] && i<token.length) {
-            c.type = 'token:'+tag
-            e++
-          }
-        }).prepend({type:'start:'+tag, power: token.length, tokenStr: token})
-          .append({type:'end:'+tag, power: token.length, tokenStr: token})
-          .forEach(function(c){
-            buf.append(c)
-          }).skip()
-        if (preNl) buf.prepend(preNl)
-        if (postNl) buf.append(postNl)
       }
     }
-    buf.flush()
   })
   return buf.stream
 }

@@ -33,9 +33,11 @@ multilineToStream(function () {/*
 
  Set of utilities to work with Markdown.
 
- The basis of this work come from https://github.com/alanshaw/md-tokenizer
+ ## sub section
 
- An alternative to https://github.com/chjj/marked
+ The **basis** of __this__ work come ~from~ https://github.com/alanshaw/md-tokenizer
+
+ __An alternative to https://github.com/chjj/marked__
 
  ## Installation
  Run the following commands to download and install the application:
@@ -61,101 +63,240 @@ multilineToStream(function () {/*
      some code with indent `block`
 
 
- */})
-;
-//fs.createReadStream('bench.md')
+ ## Ordered list
 
-  //;
+ 1. Some content
+ 2. Which can be
+ multiline
+ 3. We ll make sure it gets fenced
+
+
+ */})
+  ;
   //fs.createReadStream('README2.md')
-var pumpable = new PausableStream()
-pumpable.pause()
+//var pumpable = new PausableStream()
+//pumpable.pause()
 
 fs.createReadStream('README.md')
 
   .pipe(stringToStruct())
 
-  .pipe(pumpable.stream)
+  //.pipe(pumpable.stream)
 
   .pipe(markPossibleTokens(['-','_','*','#','~','`']))
 
   .pipe(byLine())
-  .pipe(applyLineBlock('heading', /^(#{1,6})/i))
+  .pipe(applyLineBlock('heading', /^\s*(#{1,6})/i))
   .pipe(applyLineBlock('listitem', /^\s*([\-+]\s)/i))
   .pipe(applyLineBlock('listitem', /^\s*([0-9]+\.\s)/i))
+  .pipe(regroupListItemsLines())
   .pipe(applyLineBlock('linecodeblock', /^([ ]{4})/i))
-  .pipe(arrayToStruct())
 
+  .pipe(byWord('pre'))
   .pipe(applyTagBlock('codeblock', '```', true))
-  .pipe(applyTagBlock('codeblock', '`', false))
-  .pipe(applyTagBlock('emphasis', '~~', false))
-  .pipe(applyTagBlock('emphasis', '~', false))
-  .pipe(applyTagBlock('emphasis', '--', false))
-  .pipe(applyTagBlock('emphasis', '-', false))
-  .pipe(applyTagBlock('emphasis', '**', false))
-  .pipe(applyTagBlock('emphasis', '*', false))
-  .pipe(applyTagBlock('emphasis', '__', false))
-  .pipe(applyTagBlock('emphasis', '_', false))
-
+  .pipe(controlLength(400, '```'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('inlinecode', '`'))
+  .pipe(controlLength(150, '`'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '~~'))
+  .pipe(controlLength(50, '~~'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '~'))
+  .pipe(controlLength(50, '~'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '--'))
+  .pipe(controlLength(100, '--'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '-'))
+  .pipe(controlLength(100, '-'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '**'))
+  .pipe(controlLength(50, '**'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '*'))
+  .pipe(controlLength(50, '*'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '__'))
+  .pipe(controlLength(50, '__'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '_'))
+  .pipe(controlLength(50, '_'))
+  //
+  .pipe(extractBlock('inlinecode', cleanBlock()))
   .pipe(extractBlock('codeblock', cleanBlock()))
   .pipe(extractBlock('linecodeblock', cleanBlock('')))
-
+  ////
   .pipe(extractBlock('heading', removeFrontSpace()))
-  .pipe(extractBlock('codeblock', normalizeFrontSpace()))
-  .pipe(extractBlock('codeblock', fence(4, 2)))
 
+  .pipe(extractBlock('codeblock', normalizeFrontSpace()))
+  .pipe(extractBlock('codeblock', fence(4, 0)))
+
+  .pipe(extractBlock('linecodeblock', normalizeFrontSpace()))
+  .pipe(extractBlock('linecodeblock', fence(4)))
+
+  .pipe(byWord('both'))
+  .pipe(extractBlockWithWhitespace('heading', trimBlock('\n')))
+  .pipe(whenBlock('heading', surroundBlock('\n\n\n', '\n\n')))
+  .pipe(whenBlock('heading', onlyFirstBlock(trimBlock('\n', 'left'))))
+  .pipe(whenBlock('heading', onlyFirstBlock(surroundBlock('\n', ''))))
+  .pipe(through2.obj(function(chunk,_,cb){
+    this.push(chunk)
+    cb()
+  }))
+  //.pipe(extractBlockWithWhitespace('linecodeblock', function(chunk){
+  //  console.log(chunk.tokens)
+  //  console.log('--------------')
+  //}))
+
+  //
+  //
+  .pipe(removeToken('emphasis', /.+/))
+  .pipe(removeToken('heading', /.+/))
+  .pipe(removeToken('codeblock', /.+/))
+  .pipe(removeToken('inlinecode', /.+/))
+
+  //
   .pipe(extractBlock('heading', colorizeContent(chalk.cyan)))
   .pipe(extractBlock('linecodeblock', colorizeContent(chalk.white.italic)))
+  .pipe(extractBlock('inlinecode', colorizeContent(chalk.underline)))
   .pipe(extractBlock('codeblock', colorizeContent(chalk.white.italic)))
   .pipe(extractBlock('listitem', colorizeToken(chalk.magenta.bold)))
-
+  //
   .pipe(extractBlock('emphasis', /_/, colorizeContent(chalk.bold.yellow)))
   .pipe(extractBlock('emphasis', /-/, colorizeContent(chalk.blue)))
   .pipe(extractBlock('emphasis', /\*/, colorizeContent(chalk.magenta)))
   .pipe(extractBlock('emphasis', /~/, colorizeContent(chalk.magenta)))
 
-
-  .pipe(hideToken('emphasis', /.+/))
-  .pipe(hideToken('heading', /.+/))
-  .pipe(hideToken('codeblock', /.+/))
-  .pipe(afterBlock('heading','\n\n','\n'))
+  //.pipe(afterBlock('heading','\n\n','\n'))
 
   //.pipe(surroundBlock('==','==', 'emphasis'))
-  .pipe(surroundBlock('==','', 'heading'))
+  //.pipe(surroundBlock('==','', 'heading'))
   //.pipe(surroundBlock('>>>','<<<', null, 'heading'))
 
   //.pipe(revealMarkup('linecodeblock'))
   //.pipe(revealMarkup('listitem'))
   //.pipe(revealMarkup('heading'))
   //.pipe(revealMarkup('codeblock'))
+  //.pipe(revealMarkup('emphasis'))
+  //.pipe(revealToken('emphasis'))
+  //.pipe(revealToken('codeblock'))
+  //.pipe(revealToken('inlinecode'))
+  //.pipe(revealToken('heading'))
+  //.pipe(revealToken('listitem'))
+  //.pipe(revealToken('linecodeblock'))
 
-  .pipe(byLine())
-  .pipe(less(pumpable))
-
-  .pipe(arrayToStruct())
+  //.pipe(byLine())
+  //.pipe(less(pumpable))
+  //
+  //.pipe(arrayToStruct())
+  //.pipe(flattenToJson())
   .pipe(flattenToString())
 
   .pipe(process.stdout)
   .on('end', function(){})
 
-function byLine() {
-  var buf = new StreamBuffer2()
-  buf.startBuffer()
-  buf.any(function (chunk) {
-    if (chunk.str.match(/\n/)) {
-      var line = buf.splice(0)
-      buf.flush()
-      buf.append({
-        type: 'array:node',
-        str: line.toString(),
-        originalToken: line.buffer
-      })
-      buf.flush()
+function controlLength(max, extra) {
+  return through2.obj(function(chunk, enc, callback){
+    if(chunk.strLength()>max) {
+      console.error('------------ ' + (extra || '') + ' ' +chunk.strLength())
+      console.error( chunk.toString())
     }
+    this.push(chunk)
+    callback()
+
   })
-  return buf.stream
 }
+
+function byLine() {
+  var t; // should be a TokenString
+  return through2.obj(function(chunk, enc, callback){
+
+    if (!t) {
+      t = chunk
+    } else {
+      t.concat(chunk)
+    }
+
+    if (t.match(/\n/)) {
+      this.push(t)
+      t=null
+    }
+
+    callback()
+
+  }, function (callback) {
+    if (t) {
+      this.push(t)
+      t=null
+    }
+    callback()
+  })
+}
+
+function byWord(whitespace) {
+  var t; // should be a TokenString
+  return through2.obj(function(chunk, enc, callback){
+    var that = this
+    if (!t) {
+      t = chunk
+    } else {
+      t.concat(chunk)
+    }
+
+    whitespace = 'pre'
+    if (t.match(/\s/)) {
+      var w = new TokenString()
+      t.forEach(function (l) {
+        if (!whitespace) {
+          if (w.length()) {
+            if (l.str.match(/\s/)) {
+              if (w.match(/\S+/)) {
+                that.push(w)
+                w = new TokenString()
+              }
+            } else {
+              if (w.match(/\s+/)) {
+                that.push(w)
+                w = new TokenString()
+              }
+            }
+          }
+        } else if(whitespace==='pre') {
+          if (w.length()) {
+            if (l.str.match(/\s/) && w.match(/\S+/)) {
+              that.push(w)
+              w = new TokenString()
+            }
+          }
+        }
+
+        w.append(l)
+
+        if(whitespace==='post') {
+          if (l.str.match(/\s/) && w.match(/\S+/)) {
+            that.push(w)
+            w = new TokenString()
+          }
+        }
+      })
+      t.clear()
+      t.concat(w)
+    }
+
+    callback()
+
+  }, function (callback) {
+    if (t) {
+      this.push(t)
+      t=null
+    }
+    callback()
+  })
+}
+
 function arrayToStruct() {
-  var buf = new StreamBuffer2()
+  var buf = new TokenStringBuffer()
   buf.any(function (chunk) {
     if (_.isArray(chunk)) {
       buf.pop()
@@ -183,14 +324,11 @@ function less(pumpable) {
   var width = size[0]
   height--
 
-  var wholeBuf = new StreamBuffer2()
-  wholeBuf.startBuffer()
-
   var pumpMoreLines = function(lines){
     var f = 1
     if (!pumpable.keepPump) {
       pumpable.pumpUntil(function(c){
-        if (c.str.match(/\n/)) {
+        if (c.match(/\n/)) {
           f++
         }
         return f>lines
@@ -199,70 +337,50 @@ function less(pumpable) {
     }
   }
 
-  var i = 0
-  var lessBuf = new StreamBuffer2(through2.obj(function(chunk, enc, callback){
-    wholeBuf.through(chunk)
-    i++
-    if(i===height) {
-      var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
-      printToScreen(sub)
-      pumpable.pause()
-      pumpMoreLines(10)
-    }
-    callback()
-  }, function (callback) {
-    //lessBuf.flush ()
-    //callback() // it is un-finish-able stream
-  }))
-
-  var startLinePosition = 0
-
   var printToScreen = function(sub){
     require('readline').cursorTo(process.stdout, 0, 0)
     require('readline').clearLine(process.stdout, 1)
-    lessBuf.skip()
     var printedHeight = 0
-    sub.forEach(function (line) {
-      var linelen = 0
-      line.originalToken.forEach(function (c) {
-        c = c[0]
-        if (c.str.match(/\n/)) {
-          linelen = 0
+    var linelen = 0
+    sub.forEach(function (c) {
+      if (c.str.match(/\n/)) {
+        linelen = 0
+        require('readline').cursorTo(process.stdout, 0, printedHeight)
+        require('readline').clearLine(process.stdout, 1)
+        printedHeight++
+      } else if (printedHeight<=height) {
+        if (linelen+c.str.length>=width) {
           require('readline').cursorTo(process.stdout, 0, printedHeight)
           require('readline').clearLine(process.stdout, 1)
           printedHeight++
-          lessBuf.flush()
-        } else if (printedHeight<=height) {
-          if (linelen+c.str.length>=width) {
-            require('readline').cursorTo(process.stdout, 0, printedHeight)
-            require('readline').clearLine(process.stdout, 1)
-            printedHeight++
-            lessBuf.flush()
-            linelen =0
-          }
-          linelen+=c.str.length
-          lessBuf.append(c)
+          linelen =0
         }
-      })
+        linelen+=c.str.length
+      }
     })
     require('readline').cursorTo(process.stdout, 0, height)
     require('readline').clearLine(process.stdout, 1)
   }
   printToScreen = _.throttle(printToScreen, 20, true)
+
+
+  var wholeBuf = []
+  var curPosition = 0
+
   var moveUp = _.throttle(function(){
-    if (startLinePosition>0) {
-      startLinePosition--
-      var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
+    if (curPosition>0) {
+      curPosition--
+      var sub = wholeBuf.slice(curPosition, curPosition+height)
       printToScreen(sub)
     }
   }, 30, true)
   var moveDown = _.throttle(function(){
-    if (startLinePosition+height<wholeBuf.buffer.length) {
-      startLinePosition++
-      var sub = wholeBuf.slice(startLinePosition, startLinePosition+height)
+    if (curPosition+height<wholeBuf.length) {
+      curPosition++
+      var sub = wholeBuf.slice(curPosition, curPosition+height)
       printToScreen(sub)
     }
-    if (wholeBuf.buffer.length-startLinePosition-height<=10) {
+    if (wholeBuf.length-curPosition-height<=10) {
       pumpable.pause()
       pumpMoreLines(4)
     }
@@ -281,7 +399,19 @@ function less(pumpable) {
   })
   pumpMoreLines(height+5)
 
-  return lessBuf.stream
+  var i = 0
+  return through2.obj(function(chunk, enc, callback){
+
+    wholeBuf.concat(chunk)
+    i++
+    if(i===height) {
+      printToScreen(wholeBuf.slice(curPosition, curPosition+height))
+      pumpable.pause()
+      pumpMoreLines(10)
+    }
+    callback()
+
+  }, function () {/* endless */})
 }
 
 function listenStdin(keys){
@@ -297,26 +427,22 @@ function listenStdin(keys){
 
 function markPossibleTokens(tokens) {
   return through2.obj(function(chunk, enc, callback){
-    if (tokens.indexOf(chunk.str)>-1) {
-      chunk.type = 'maybe:token'
+    if (tokens.indexOf(chunk.toString())>-1) {
+      chunk.first().type = 'maybe:token'
     }
     this.push(chunk, enc)
     callback()
   })
 }
 function applyLineBlock(tag, token) {
-  var buf = new StreamBuffer2()
-  buf.any(function (chunk) {
-    if(chunk.str.length>1) {
-      var tokenMatch = chunk.str.match(RegExp.fromStr(token))
+  return through2.obj(function(chunk, enc, callback){
+    if(chunk.strLength()>1) {
+      var tokenMatch = chunk.match(RegExp.fromStr(token))
       if ( tokenMatch && tokenMatch.length) {
-        var sub = new StreamBuffer2()
-        sub.buffer = chunk.originalToken;
-
-        if ( !sub.slice(tokenMatch.index, tokenMatch[0].length).filterType('token:').length()) {
-          var postNl = sub.pop()
+        if ( !chunk.slice(tokenMatch.index, tokenMatch[0].length).filterType('token:').length()) {
+          var postNl = chunk.pop()
           var e = 0
-          sub.splice(0).forEach(function(c, i){
+          chunk.forEach(function(c, i){
             if (i>=tokenMatch.index
               && !c.type.match(/token:/)
               && c.str===tokenMatch[1][e]
@@ -326,115 +452,222 @@ function applyLineBlock(tag, token) {
             }
           }).prepend({type:'start:'+tag, power: tokenMatch[1].length, tokenStr: tokenMatch[1]})
             .append({type:'end:'+tag, power: tokenMatch[1].length, tokenStr: tokenMatch[1]})
-            .forEach(function(c){
-              sub.append(c)
-            })
-          if (postNl) sub.append(postNl)
-          chunk.originalToken = [].concat(sub.buffer)
+          if (postNl) chunk.append(postNl)
 
-          sub.skip()
         }
       }
     }
+    this.push(chunk, enc)
+    callback()
   })
-  return buf.stream
+}
+function regroupListItemsLines() {
+  var regroupLines = function (lines){
+    if (lines.split(/\n/).length>1) {
+      var g = lines.lastIndexOfType('end:listitem')
+      var end = lines.splice(g, 1).first()
+      var insertIndex;
+      lines.forEachReversed(function (c,i) {
+        if (!insertIndex  && !c.str.match(/\s/)) {
+          insertIndex = i
+        }
+      });
+      if (insertIndex) {
+        lines.insert(insertIndex, end)
+      } else {
+        lines.append(end)
+      }
+    }
+  }
+  var t;
+  var isInBlock = false
+  return through2.obj(function(chunk, enc, callback){
+    if (!isInBlock && chunk.first().type.match(/^start:listitem/)) {
+      isInBlock = true
+      t = chunk
+    } else if (isInBlock){
+
+      if (chunk.first().type.match(/^start:listitem/)) {
+        regroupLines(t)
+        this.push(t)
+        t = chunk
+      } else {
+        t.concat(chunk)
+        if (t.match(/\n\n$/)) {
+          regroupLines(t)
+          this.push(t)
+          isInBlock = false
+          t = null
+        } else {
+          //console.log(chunk.tokens)
+        }
+      }
+
+    } else {
+      this.push(chunk, enc)
+    }
+    callback()
+  })
 }
 
 function revealMarkup(tag) {
-  var buf = new StreamBuffer2()
-  buf.any(function (chunk) {
-    if (chunk.type
-      && chunk.type.match(/^(start|end)/)
-      && chunk.type.match(tag)) {
-      var str = '' + chunk.type
-      if (chunk.type.match(/^(start)/)){
-        str+='['+chunk.power+']'+':'
-        buf.prepend({type:'text', str:str})
-      } else {
-        buf.append({type:'text', str:':'+str})
+  return through2.obj(function(chunk, enc, callback){
+    var toInsert = []
+    chunk.forEach(function(c, i){
+      if (c.type
+        && c.type.match(/^(start|end)/)
+        && c.type.match(tag)) {
+        var str = '' + c.type
+        if (c.type.match(/^(start)/)){
+          str+='['+c.power+']'+'::'
+        } else {
+          str='::'+str
+        }
+        toInsert.push([i+1, {type:'text', str:str}])
       }
-    }
+    })
+    toInsert.forEach(function(p){
+      chunk.insert(p[0], p[1])
+    })
+    this.push(chunk, enc)
+    callback()
   })
-  return buf.stream
+}
+function revealToken(tag) {
+  return through2.obj(function(chunk, enc, callback){
+    chunk.forEach(function(c, i){
+      if (c.type
+        && c.type.match(/^(token)/)
+        && c.type.match(tag)) {
+        c.str = chalk.underline.red(c.str)
+      }
+    })
+    this.push(chunk, enc)
+    callback()
+  })
 }
 
 
 function applyTagBlock(tag, str, allowNewLines) {
-  var buf = new StreamBuffer2()
+  var okStr = RegExp.quote(str)
 
-  buf.startBuffer()
-  var isInBlock = false
-  buf.onceStr(str, function (chunk) {
-    if (chunk.type=='maybe:token') {
-      if (!isInBlock) {
-        var pre = buf.slice(buf.length()-(str.length+1), buf.length()-str.length)
-        if (!pre.length() || pre.first().str.match(/\s/)) {
-          buf.tail(str.length).startBuffer()
-          isInBlock = true
+  var startToken = '['+okStr + ']{'+str.length+'}[^'+okStr+']+'
+  var endToken = '['+okStr + ']{'+str.length+'}[^'+okStr+']+['+okStr + ']{'+str.length+'}[^'+okStr+']*$'
+
+  var beginToken = new RegExp('^'+startToken)
+  startToken = '^\\s+' + startToken
+  endToken = '\\s+' + endToken
+  startToken = new RegExp(startToken)
+  endToken = new RegExp(endToken)
+
+  var applyToken = function (tokenStr) {
+    var e = 0
+    tokenStr.forEach(function (c, i) {
+      if (tokenStr.filterType('token:'+tag).length()<str.length) {
+        if(str[e] && c.str===str[e]) {
+          c.type = 'token:'+tag
+          e++
         }
-      } else {
-
-        if (buf.strLength()<=str.length*2) {
-          buf.flush()
-          isInBlock = false
-
-        } else {
-          var startTokens = buf.splice(0, str.length)
-            .forEach(function(c){
-              c.type = 'token:'+tag
-            }).prepend({type:'start:'+tag, power: str.length, tokenStr: str})
-
-          var endTokens = buf.splice(-str.length)
-            .forEach(function(c){
-              c.type = 'token:'+tag
-            }).append({type:'end:'+tag, power: str.length, tokenStr: str})
-
-          startTokens.flush()
-          buf.flush()
-          endTokens.flush()
-
-          isInBlock = false
-        }
-
       }
-    }
-  })
-  buf.onceStr('\n', function (chunk) {
-    if (isInBlock && !allowNewLines) {
-      buf.flush()
-      isInBlock = false
-    }else if (!isInBlock) {
-      buf.flush()
-    }
-  })
-  buf.any(function (chunk) {
-    // 40 is a very arbitrary value ! too low, it will call too often and clutter the node loop
-    if (!isInBlock && buf.strLength() > 40) {
-      buf.tail(str.length*2)
-    }
-  })
+    })
+    e = str.length-1
+    tokenStr.forEachReversed(function (c) {
+      if (tokenStr.filterType('token:'+tag).length()<str.length*2) {
+        if(str[e] && c.str===str[e]) {
+          c.type = 'token:'+tag
+          e--
+        }
+      }
+    })
 
-  return buf.stream
+    tokenStr.insert(tokenStr.lastIndexOfType('token:'+tag)+1,
+      {type:'end:'+tag, power: str.length, tokenStr: str, str:''})
+    tokenStr.insert(tokenStr.indexOfType('token:'+tag),
+      {type:'start:'+tag, power: str.length, tokenStr: str, str:''})
+  }
+
+  var browsed = 0;
+  var t; // should be a TokenString
+  return through2.obj(function(chunk, enc, callback){
+    if (!t && chunk.match(browsed===0?beginToken:startToken)
+      && !chunk.filterType('token:'+tag).length()) {
+      t = chunk
+      if (t.match(endToken)) {
+        applyToken(t)
+        this.push(t)
+        t=null
+      } else {
+      }
+    } else if (t){
+      //if (chunk.filterType('token:'+tag).length()) console.log(chunk.tokens)
+      t.concat(chunk)
+      if (!allowNewLines && chunk.match(/\n/)) {
+        this.push(t)
+        t=null
+
+      } else if (t.match(endToken)) {
+        applyToken(t)
+        this.push(t)
+        t=null
+      } else {
+      }
+    } else {
+      this.push(chunk)
+    }
+
+    browsed++
+    callback()
+
+  }, function (callback) {
+    if (t) {
+      this.push(t)
+      t=null
+    }
+    callback()
+  })
+}
+
+
+function surroundBlock(open, close) {
+  return function (buf) {
+    open.split('').forEach(function(c){
+      buf.prepend({type: 'text', str: c})
+    })
+    close.split('').forEach(function(c){
+      buf.append({type: 'text', str: c})
+    })
+  }
+}
+function innerSurroundBlock(open, close) {
+  return function (buf) {
+    var head = buf.unshift()
+    var foot = buf.pop()
+    open.split('').forEach(function(c){
+      buf.prepend({type: 'text', str: c})
+    })
+    buf.prepend(head)
+    open.split('').forEach(function(c){
+      buf.append({type: 'text', str: c})
+    })
+    buf.append(foot)
+  }
+}
+function trimBlock(str, dir) {
+  dir = dir || 'both'
+  return function (buf) {
+    if (['left', 'both'].indexOf(dir)>-1) buf.less(str)
+    if (['right', 'both'].indexOf(dir)>-1) buf.tail(str)
+  }
 }
 function cleanBlock(tokenEnd) {
   return function (buf) {
-    var token = buf.first().tokenStr
+    var token = buf.filterType(/^start:/).first().tokenStr
     if (tokenEnd==null) {
       tokenEnd = token
     }
-    buf.less(token.length+1)
-    buf.splice(0, buf.length()-(tokenEnd.length+1))
-      .reverse()
-      .forEach(function(c){
-        if (!c.type.match(/text/)) {
-          if (c.type.match(/token/)) {
-            c.type = 'text'
-            buf.prepend(c)
-          }
-        } else {
-          buf.prepend(c)
-        }
-      })
+    buf.slice(1+token.length, -1-tokenEnd.length).forEach(function (c) {
+      c.type = 'text'
+    })
   }
 }
 function normalizeFrontSpace() {
@@ -474,7 +707,7 @@ function removeFrontSpace() {
       line.forEach(function (c, i) {
         if (c.type==='text') {
           if (keepRemove && c.str.match(/[ ]/)) {
-            var g = buf.splice(index, 1)
+            buf.splice(index, 1)
             index--
           } else if(keepRemove && c.str.length) {
             keepRemove = false
@@ -508,7 +741,7 @@ function fence(regularSpaceCnt, firstLineSpaceCnt) {
           spaceCnt = regularSpaceCnt
         }
         for (var i=0;i<spaceCnt;i++) {
-          buf.splice(index+start, 0, [{type: 'text', str: ' '}])
+          buf.splice(index+start, 0, {type: 'text', str: ' '})
         }
         index+=line.length()+spaceCnt
       })
@@ -522,19 +755,156 @@ function extractBlock(tag, token, then) {
     then = token
     token = null
   }
-  var buf = new StreamBuffer2()
+  //var whitespace = false
+  //if (_.isObject(token)) {
+  //  whitespace = token.whitespace || whitespace
+  //  token = token.token
+  //}
   var isInBlock = false
-  buf.any(function (chunk) {
-    if (!isInBlock && chunk.type==='start:'+tag && (!token || chunk.tokenStr.match(token))) {
-      buf.tail(1).startBuffer()
-      isInBlock = true
-    } else if (isInBlock && chunk.type==='end:'+tag && (!token || chunk.tokenStr.match(token))) {
-      then(buf)
-      buf.flush().stopBuffer()
-      isInBlock = false
+  var t = new TokenString();
+  return through2.obj(function(chunk, enc, callback){
+    var that = this
+
+    chunk.forEach(function (c) {
+      if (c.type.match(/^start:/)
+        && c.type.split(':')[1]===tag) {
+        //var prespace;
+        //if (['pre','both'].indexOf(''+whitespace)>-1) {
+        //  prespace = t.less(/^\s$/)
+        //}
+        if(t.length()) that.push(t)
+        t = new TokenString();
+        t.append(c)
+        isInBlock = true
+      } else if (isInBlock
+        && c.type.match(/^end:/)
+        && c.type.split(':')[1]===tag) {
+        //var postspace;
+        //if (['post','both'].indexOf(''+whitespace)>-1) {
+        //  postspace = t.tail(/^\s$/)
+        //}
+        t.append(c)
+        //if (postspace && postspace.length()) console.log(postspace.tokens)
+        if(then) then(t)
+        isInBlock = false
+        that.push(t)
+        t = new TokenString();
+      } else {
+        t.append(c)
+        if (!isInBlock && (t.match(/\n/))) {
+          that.push(t)
+          t = new TokenString();
+        }
+      }
+    })
+    callback()
+  }, function (callback) {
+    if (t) {
+      this.push(t)
+      t=null
     }
+    callback()
   })
-  return buf.stream
+}
+
+function extractBlockWithWhitespace(tag, token, then) {
+  if (!then) {
+    then = token
+    token = null
+  }
+  var t = new TokenString();
+  return through2.obj(function(chunk, enc, callback){
+    var that = this
+
+    chunk.forEach(function(c, i){
+
+      if(c.type.match(/^start:/)
+        && c.type.match(tag)
+        && (!token || c.tokenStr.match(token))) {
+        var tail = t.lessUntil(/\s/)
+        if (tail.length()) that.push(tail)
+        t = new TokenString()
+        t.concat(chunk.splice(0, i+1))
+
+      } else if(t.filterType('start:'+tag).length()) {
+
+        if(c.type.match(/^end:/)
+          && c.type.match(tag)
+          && (!token || c.tokenStr.match(token))) {
+          t.concat(chunk.splice(0, chunk.indexOfType('end:'+tag)+1))
+
+        } else if (t.filterType('end:'+tag).length()) {
+
+          if (!c.str || c.str.match(/\S+/)){
+            if (then) then(t)
+            that.push(t)
+            t = new TokenString()
+            var y = (new TokenString())
+            y.append(c)
+            that.push(y)
+          } else {
+            t.append(c)
+          }
+        }
+
+      } else {
+        if (c.str.match(/\s+/)) {
+          if (t.match(/\S+/)) {
+            that.push(t)
+            t = new TokenString()
+          }
+        }
+        t.append(c)
+      }
+    })
+
+    callback()
+  }, function (callback) {
+    if (t) {
+      this.push(t)
+      t=null
+    }
+    callback()
+  })
+}
+function whenBlock(tag, token, then) {
+  if (!then) {
+    then = token
+    token = null
+  }
+  var t = new TokenString();
+  var index = 0
+  return through2.obj(function(chunk, enc, callback){
+    if (chunk.length()) {
+      if (chunk.indexOfType('start:'+tag)>-1
+        && (!token || chunk.filterType('start:'+tag).tokenStr.match(token))) {
+        then (chunk, index)
+        index++;
+      }
+      this.push(chunk)
+    }
+    callback()
+  }, function (callback) {
+    if (t) {
+      this.push(t)
+      t=null
+    }
+    callback()
+  })
+}
+function onlyFirstBlock(cb) {
+  var i = 0
+  return function(buf){
+    if (i<1) cb(buf)
+    i++
+  }
+}
+function skipFirstBlock(cb) {
+  var i = 0
+  return function(buf){
+    if (i>0) cb(buf)
+    i++
+  }
 }
 
 
@@ -579,42 +949,33 @@ function colorizeToken(colorizer) {
 }
 
 function hideToken(tag, token) {
-  var buf = new StreamBuffer2()
-  buf.startBuffer()
-  buf.any(function (chunk) {
-    if (chunk.type==='token:'+tag && chunk.str.match(token)) {
-      buf.pop()
-    }
-    buf.flush()
+  return through2.obj(function(chunk, enc, callback){
+    chunk.forEach(function(c, i){
+      if (c.type==='token:'+tag && c.str.match(token)) {
+        c.str=''
+      }
+    })
+    this.push(chunk)
+    callback()
   })
-  return buf.stream
 }
-function surroundBlock(open, close, type, notType) {
-  var buf = new StreamBuffer2()
-  buf.startBuffer()
-  buf.any(function (chunk) {
-    if (chunk.type.match(/^start:/)) {
-      if (!type || chunk.type.match(type)) {
-        if (!notType || !chunk.type.match(notType)) {
-          buf.pop()
-          buf.append({type: 'text', str: open})
-          buf.append(chunk)
-        }
+function removeToken(tag, token) {
+  return through2.obj(function(chunk, enc, callback){
+    var toRemove = []
+    chunk.forEach(function(c, i){
+      if (c.type==='token:'+tag && c.str.match(token)) {
+        toRemove.push(i)
       }
-    }
-    if (chunk.type.match(/^end:/)) {
-      if (!type || chunk.type.match(type)) {
-        if (!notType || !chunk.type.match(notType)) {
-          buf.append({type: 'text', str: close})
-        }
-      }
-    }
-    buf.flush()
+    })
+    toRemove.reverse().forEach(function(i){
+      chunk.splice(i, 1)
+    })
+    this.push(chunk)
+    callback()
   })
-  return buf.stream
 }
 function afterBlock(type, required, trim) {
-  var buf = new StreamBuffer2()
+  var buf = new TokenStringBuffer()
   var isInBlock = false
   buf.any(function (chunk) {
     if (chunk.type.match(/^end:/)
@@ -664,110 +1025,28 @@ function afterBlock(type, required, trim) {
   return buf.stream
 }
 
-function StreamBuffer2(stream){
 
-  var caller = getCallerLocation()
-
-  this.buffer = []
-  this.strBuffer = ''
-  this.isBuffering = false
-
-
-  this.onceBlock = []
-  this.onChunk = []
+function TokenString(){
 
   var that = this
-  this.stream = stream || through2.obj(function(chunk, enc, callback){
-    that.through(chunk)
-    callback()
-  }, function (callback) {
-    that.flush ()
-    callback()
-  });
 
-  this.through = function (chunk){
+  var thisTokenIndex = 0
+  this.tokens = []
+  this.str = ''
 
-    !('str' in chunk) && (chunk.str = '')
-    var args = [].slice.call(arguments);
-
-    this.buffer.push(args)
-    this.strBuffer += chunk.str
-
-    this.onChunk.forEach(function (fn) {
-      fn(chunk)
-    })
-
-    if (!this.isBuffering) {
-      this.flush()
-    }
+  var finalizeToken = function (token) {
+    !('str' in token) && (token.str = '');
+    !('type' in token) && (token.type = '');
   }
 
   this.toString = function (){
-    return this.strBuffer
+    return this.str
   }
-  this.startBuffer = function (){
-    this.isBuffering = true
-    return this
-  }
-  this.pipe = function (stream){
-    return this.stream.pipe(stream)
-  }
-  this.stopBuffer = function (){
-    this.isBuffering = false
-    return this
-  }
-
-  this.onceBlock = function (block, cb){
-    this.onceBlock.push({
-      block: block,
-      cb: cb
-    })
-    return this
-  }
-
-  this.any = function (cb){
-    this.onChunk.push(cb)
-    return this
-  }
-  this.not = function (str, cb){
-    this.onChunk.push(function (chunk) {
-      if (chunk.str!==str) {
-        cb(chunk)
-      }
-    })
-    return this
-  }
-  this.notMatch = function (str, cb){
-    this.onChunk.push(function (chunk) {
-      if (chunk.str && !chunk.str.match(str)) {
-        cb(chunk)
-      }
-    })
-    return this
-  }
-  this.onceStr = function (str, cb){
-    this.onChunk.push(function (chunk) {
-      var strBuffer = that.strBuffer
-      if (strBuffer.substr(strBuffer.length-str.length, str.length)===str) {
-        cb(chunk)
-      }
-    })
-    return this
-  }
-  this.onceMatch = function (str, cb){
-    this.onChunk.push(function (chunk) {
-      if (chunk.str && chunk.str.match(str)) {
-        cb(chunk)
-      }
-    })
-    return this
-  }
-
 
   this.append = function (chunk){
-    !('str' in chunk) && (chunk.str = '')
-    this.strBuffer += chunk.str
-    this.buffer.push([chunk])
+    finalizeToken(chunk)
+    this.str += chunk.str
+    this.tokens.push(chunk)
     return this
   }
   this.appendStr = function (strChunk, type){
@@ -776,9 +1055,9 @@ function StreamBuffer2(stream){
     return this
   }
   this.prepend = function (chunk){
-    !('str' in chunk) && (chunk.str = '')
-    this.strBuffer = chunk.str + this.strBuffer
-    this.buffer.unshift([chunk])
+    finalizeToken(chunk)
+    this.str = chunk.str + this.str
+    this.tokens.unshift(chunk)
     return this
   }
   this.prependStr = function (strChunk, type){
@@ -788,53 +1067,91 @@ function StreamBuffer2(stream){
   }
 
   this.match = function (content){
-    return this.strBuffer.match(content)
+    return this.str.match(content)
   }
   this.strLength = function (){
-    return this.strBuffer.length
+    return this.str.length
   }
   this.substr = function (){
-    return this.strBuffer.substr.apply(this.strBuffer, arguments)
+    return this.str.substr.apply(this.str, arguments)
   }
 
   this.shift = function (){
-    var chunk = this.buffer.shift()
+    var chunk = this.tokens.shift()
     if (chunk) {
-      chunk = chunk[0]
-      this.strBuffer = this.strBuffer.substr(chunk.str.length)
+      this.str = this.str.substr(chunk.str.length)
     }
     return chunk
   }
   this.pop = function (){
-    var chunk = this.buffer.pop()
+    var chunk = this.tokens.pop()
     if (chunk) {
-      this.strBuffer = this.strBuffer.substr(0, this.strBuffer.length-chunk[0].str.length)
+      this.str = this.str.substr(0, this.str.length-chunk.str.length)
     }
-    return chunk[0]
+    return chunk
+  }
+  this.insert = function (i, token){
+    finalizeToken(token)
+    this.splice(i, 0, token);
+    return this
+  }
+  this.indexOfType = function (type){
+    var i = -1
+    this.forEach(function(c, e){
+      if (i===-1 && c.type===type) {
+        i = e
+      }
+    })
+    return i
+  }
+  this.lastIndexOfType = function (type){
+    var i = -1
+    this.forEachReversed(function(c, e){
+      if (i===-1 && c.type===type) {
+        i = e
+      }
+    })
+    return i
+  }
+  this.indexOf = function (str){
+    var i = -1
+    this.forEach(function(c, e){
+      if (i===-1 && c.str===str) {
+        i = e
+      }
+    })
+    return i
+  }
+  this.lastIndexOf = function (str){
+    var i = -1
+    this.forEachReversed(function(c, e){
+      if (i===-1 && c.str===str) {
+        i = e
+      }
+    })
+    return i
   }
 
   this.slice = function (){
     var args = [].slice.call(arguments);
-    var sub = new StreamBuffer2(that.stream)
-    sub.buffer = this.buffer.slice.apply(this.buffer, args)
+    var sub = new TokenString()
+    sub.concat([].slice.apply(this.tokens, args))
     // this won t detect white nodes
     // can read count of white nodes in `sub`
     // to re splice again of that amount of nodes.
 
-    sub.updateChanges__()
+    this.updateChanges__()
 
     return sub
   }
   this.splice = function (){
     var args = [].slice.call(arguments);
-    var sub = new StreamBuffer2(that.stream)
-    sub.buffer = [].splice.apply(this.buffer, args)
+    var sub = new TokenString()
+    sub.concat([].splice.apply(this.tokens, args))
     // this won t detect white nodes
     // can read count of white nodes in `sub`
     // to re splice again of that amount of nodes.
 
-
-    sub.updateChanges__()
     this.updateChanges__()
 
     return sub
@@ -866,112 +1183,190 @@ function StreamBuffer2(stream){
   }
 
   this.reverse = function (){
-    this.buffer.reverse()
+    this.tokens.reverse()
     this.updateChanges__()
     return this
   }
   this.filterType = function (t){
-    var sub = new StreamBuffer2(that.stream)
+    var sub = new TokenString()
     this.forEach(function(c, i){
       if (c.type && c.type.match(t)) {
-        sub.buffer.push(that.buffer[i])
+        sub.tokens.push(that.tokens[i])
       }
     })
     sub.updateChanges__()
     return sub
   }
   this.filterNotType = function (t){
-    var sub = new StreamBuffer2(that.stream)
+    var sub = new TokenString()
     this.forEach(function(c, i){
       if (c.type && !c.type.match(t)) {
-        sub.buffer.push(that.buffer[i])
+        sub.tokens.push(that.tokens[i])
       }
     })
     sub.updateChanges__()
     return sub
   }
   this.filterStr = function (t){
-    var sub = new StreamBuffer2(that.stream)
+    var sub = new TokenString()
     this.forEach(function(c, i){
       if (c.str && c.str.match(t)) {
-        sub.buffer.push(that.buffer[i])
+        sub.tokens.push(that.tokens[i])
       }
     })
     sub.updateChanges__()
     return sub
   }
   this.getLastToken = function (type){
-    for( var i=this.buffer.length-1;i>=0;i--) {
-      if (this.buffer[i][0].type.match(type)) {
-        return this.buffer[i][0]
+    for( var i=this.tokens.length-1;i>=0;i--) {
+      if (this.tokens[i].type.match(type)) {
+        return this.tokens[i]
       }
     }
     return null
   }
   this.first = function (){
-    if (this.buffer.length) {
-      return this.buffer[0][0]
+    if (this.tokens.length) {
+      return this.tokens[0]
     }
     return null
   }
   this.last = function (){
-    if (this.buffer.length) {
-      return this.buffer[this.buffer.length-1][0]
+    if (this.tokens.length) {
+      return this.tokens[this.tokens.length-1]
     }
     return null
   }
-  this.forEach = function (then){
-    this.buffer.forEach(function (chunk, i) {
-      if (then)
-        then(chunk[0], i)
+
+  this.less = function (some){
+    var k = false;
+    var found = false;
+    this.forEach(function(c, i){
+      if (k===false) {
+        if (c.str.match(some)) {
+          found = true
+        } else if(found){
+          k = i
+        }
+      }
     })
+    return k===false?new TokenString : this.splice(0, k)
+  }
+  this.tail = function (some){
+    var k = false;
+    var found = false;
+    this.forEachReversed(function(c, i){
+      if (k===false) {
+        if (c.str.match(some)) {
+          found = true
+        } else if(found){
+          k = i+1
+        }
+      }
+    })
+    return k===false?new TokenString : this.splice(k)
+  }
+  this.lessLength = function (l){
+    return this.splice(0, l)
+  }
+  this.tailLength = function (l){
+    return this.splice(this.length()-l)
+  }
+  this.lessUntil = function (some){
+    var k = false;
+    this.forEach(function(c, i){
+      if (k===false && c.str.match(some)) {
+        k=i
+      }
+    })
+    return k===false?new TokenString : this.splice(0, k)
+  }
+  this.tailUntil = function (some){
+    var k = false;
+    this.forEachReversed(function(c, i){
+      if (k===false && c.str.match(some)) {
+        k = i+1
+      }
+    })
+    return k===false?new TokenString : this.splice(k)
+  }
+  this.lessType = function (some){
+    var k = false;
+    this.forEach(function(c, i){
+      if (k===false && !c.type.match(some)) {
+        k=i
+      }
+    })
+    return k===false?new TokenString : this.splice(0, k)
+  }
+  this.tailType = function (some){
+    var k = false;
+    this.forEachReversed(function(c, i){
+      if (k===false && !c.type.match(some)) {
+        k = i
+      }
+    })
+    return k===false?new TokenString : this.splice(k)
+  }
+  this.lessUntilType = function (some){
+    var k = false;
+    this.forEach(function(c, i){
+      if (k===false && !c.type.match(some)) {
+        k=i
+      }
+    })
+    return k===false?new TokenString : this.splice(0, k)
+  }
+  this.tailUntilType = function (some){
+    var k = false;
+    this.forEachReversed(function(c, i){
+      if (k===false && !c.type.match(some)) {
+        k = i
+      }
+    })
+    return k===false?new TokenString : this.splice(k)
+  }
+
+  this.forEach = function (then){
+    if (then) {
+      var it = [].concat(this.tokens)
+      for(var i=0;i<it.length;i++) {
+        then(it[i], i)
+      }
+    }
+    return this
+  }
+  this.forEachReversed = function (then){
+    if (then) {
+      var it = [].concat(this.tokens)
+      for(var i=it.length-1;i>=0;i--) {
+        then(it[i], i)
+      }
+    }
     return this
   }
   this.length = function (){
-    return this.buffer.length
+    return this.tokens.length
   }
 
-
-  this.flush = function (){
-    var stream = that.stream
-    this.buffer.forEach(function(c){
-      stream.push.apply(stream, c)
-    })
-    this.buffer = []
-    this.strBuffer = ''
-    return this
-  }
-  this.tail = function (l){
-    var tail = this.splice(-l)
-    this.flush()
-    tail.forEach(function(c){
-      that.append(c)
-    })
-    return this
-  }
-  this.less = function (l){
-    var begin = this.splice(l)
-    this.flush()
-    begin.forEach(function(c){
-      that.append(c)
-    })
+  this.clear = function (){
+    this.tokens = []
+    this.str = []
     return this
   }
 
-  this.skip = function (){
-    this.buffer = []
-    this.strBuffer = ''
-    return this
-  }
 
   this.updateChanges__ = function (){
     var s = ''
-    this.buffer.forEach(function(c){
-      s += c.length ? c[0].str : c.str
+    this.tokens.forEach(function(c){
+      s += c.str || ''
     })
-    this.strBuffer = s
+    this.str = s
   }
 }
+
+
+
 function PausableStream(){
   var that = this
   that.resumer = null;
@@ -1046,7 +1441,9 @@ function stringToStruct(){
       } else {
         str = chunk.toString('utf8', i, i+1)
       }
-      this.push({type: 'text', str: str})
+      var t = new TokenString()
+      t.append({type: 'text', str: str})
+      this.push(t)
     }
     callback()
   })
@@ -1060,7 +1457,10 @@ function stringToStruct(){
  */
 function flattenToString(){
   return through2.obj(function (chunk, enc, callback) {
-    this.push((chunk.prepend || '') + chunk.str + (chunk.append || ''))
+    var that = this
+    chunk.forEach(function (c) {
+      that.push((c.prepend || '') + (c.str || '') + (c.append || ''))
+    })
     callback()
   })
 }

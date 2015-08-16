@@ -96,4 +96,25 @@ describe('applyLineBlock transformer', function () {
       }))
       .pipe(through2.obj(_.debounce(function(){done()}, 10)))
   })
+
+  it('fixture test #2', function (done) {
+    var stream = through2()
+    stream.pipe(toTokenString())
+      .pipe(byLine())
+      .pipe(applyLineBlock('heading', /^([ ]{4})/))
+      .pipe(through2.obj(function(chunk,_,cb){
+        console.log(chunk.tokens)
+        this.push(chunk)
+        cb()
+      }))
+      .pipe(through2.obj(_.debounce(function(){done()}, 10)));
+    stream.write(
+      'd\n' +
+      '\n    dsdfsdf sdfsdfs' +
+      '\n    ' +
+      '\n    ssfdfsdfds' +
+      '\nd'
+    )
+    stream.end()
+  })
 })

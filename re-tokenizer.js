@@ -22,6 +22,7 @@ var removeToken = require('./lib/remove-token.js')
 var hideToken = require('./lib/hide-token.js')
 var colorizeContent = require('./lib/colorize-content.js')
 var colorizeToken = require('./lib/colorize-token.js')
+var revealMarkup = require('./lib/reveal-markup.js')
 var whenBlock = require('./lib/when-block.js')
 var extractBlock = require('./lib/extract-block.js')
 var extractBlockWithWhitespace = require('./lib/extract-block-with-whitespace.js')
@@ -41,6 +42,124 @@ var byLine = require('./lib/by-line.js')
 var byWord = require('./lib/by-word.js')
 
 
+fs.createReadStream('README.md')
+
+  .pipe(stringToStruct())
+
+  //.pipe(pumpable.stream)
+
+  .pipe(markPossibleTokens(['-','_','*','#','~','`']))
+  //
+  .pipe(byLine())
+  .pipe(applyLineBlock('heading', /^\s*(#{1,6})/i))
+  .pipe(applyLineBlock('listitem', /^\s*([\-+]\s)/i))
+  .pipe(applyLineBlock('listitem', /^\s*([0-9]+\.\s)/i))
+  .pipe(regroupListItemsLines())
+  .pipe(applyLineBlock('linecodeblock', /^([ ]{4})/i))
+
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('codeblock', /[`]{3}/, true))
+  .pipe(controlLength(400, '```'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('inlinecode', '`'))
+  .pipe(controlLength(150, '`'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '~~'))
+  .pipe(controlLength(50, '~~'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '~'))
+  .pipe(controlLength(50, '~'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '--'))
+  .pipe(controlLength(100, '--'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '-'))
+  .pipe(controlLength(100, '-'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '**'))
+  .pipe(controlLength(50, '**'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '*'))
+  .pipe(controlLength(50, '*'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '__'))
+  .pipe(controlLength(50, '__'))
+  .pipe(byWord('pre'))
+  .pipe(applyTagBlock('emphasis', '_'))
+  .pipe(controlLength(50, '_'))
+  //
+  .pipe(extractBlock('codeblock', cleanBlock()))
+  .pipe(extractBlock('inlinecode', cleanBlock()))
+  .pipe(extractBlock('linecodeblock', cleanBlock('')))
+  //
+  .pipe(extractBlock('heading', removeFrontSpace()))
+  //
+  .pipe(extractBlock('codeblock', normalizeFrontSpace()))
+  .pipe(extractBlock('codeblock', fence(4, 0)))
+  //
+  .pipe(extractBlock('linecodeblock', normalizeFrontSpace()))
+  .pipe(extractBlock('linecodeblock', fence(4)))
+  ////
+  //.pipe(byWord('both'))
+  //.pipe(extractBlockWithWhitespace('heading', trimBlock('\n')))
+  //.pipe(whenBlock('heading', surroundBlock('\n\n\n', '\n\n')))
+  //.pipe(whenBlock('heading', onlyFirstBlock(trimBlock('\n', 'left'))))
+  //.pipe(whenBlock('heading', onlyFirstBlock(surroundBlock('\n', ''))))
+  //.pipe(through2.obj(function(chunk,_,cb){
+  //  this.push(chunk)
+  //  cb()
+  //}))
+  //.pipe(extractBlockWithWhitespace('linecodeblock', function(chunk){
+  //  console.log(chunk.tokens)
+  //  console.log('--------------')
+  //}))
+
+  //
+  //
+  //.pipe(removeToken('emphasis', /.+/))
+  .pipe(removeToken('heading', /.+/))
+  .pipe(removeToken('codeblock', /.+/))
+  .pipe(removeToken('inlinecode', /.+/))
+
+  //
+  .pipe(extractBlock('heading', colorizeContent(chalk.cyan)))
+  .pipe(extractBlock('linecodeblock', colorizeContent(chalk.white.italic)))
+  .pipe(extractBlock('inlinecode', colorizeContent(chalk.underline)))
+  .pipe(extractBlock('codeblock', colorizeContent(chalk.white.italic)))
+  .pipe(extractBlock('listitem', colorizeToken(chalk.magenta.bold)))
+  //
+  .pipe(extractBlock('emphasis', /_/, colorizeContent(chalk.bold.yellow)))
+  .pipe(extractBlock('emphasis', /-/, colorizeContent(chalk.blue)))
+  .pipe(extractBlock('emphasis', /\*/, colorizeContent(chalk.magenta)))
+  .pipe(extractBlock('emphasis', /~/, colorizeContent(chalk.magenta)))
+
+  //.pipe(afterBlock('heading','\n\n','\n'))
+
+  //.pipe(surroundBlock('==','==', 'emphasis'))
+  //.pipe(surroundBlock('==','', 'heading'))
+  //.pipe(surroundBlock('>>>','<<<', null, 'heading'))
+
+  //.pipe(revealMarkup('linecodeblock'))
+  //.pipe(revealMarkup('listitem'))
+  //.pipe(revealMarkup('heading'))
+  .pipe(revealMarkup('block'))
+  //.pipe(revealMarkup('emphasis'))
+  //.pipe(revealToken('emphasis'))
+  //.pipe(revealToken('codeblock'))
+  //.pipe(revealToken('inlinecode'))
+  //.pipe(revealToken('heading'))
+  //.pipe(revealToken('listitem'))
+  //.pipe(revealToken('linecodeblock'))
+
+  //.pipe(byLine())
+  //.pipe(less(pumpable))
+  //
+  //.pipe(arrayToStruct())
+  //.pipe(flattenToJson())
+  .pipe(flattenToString())
+
+  .pipe(process.stdout)
+  .on('end', function(){})
 multilineToStream(function () {/*
  # md-stream-utils
 
@@ -86,128 +205,10 @@ multilineToStream(function () {/*
 
  */})
   ;
+
   //fs.createReadStream('README2.md')
 //var pumpable = new PausableStream()
 //pumpable.pause()
-
-fs.createReadStream('README.md')
-
-  .pipe(stringToStruct())
-
-  //.pipe(pumpable.stream)
-
-  .pipe(markPossibleTokens(['-','_','*','#','~','`']))
-
-  .pipe(byLine())
-  .pipe(applyLineBlock('heading', /^\s*(#{1,6})/i))
-  .pipe(applyLineBlock('listitem', /^\s*([\-+]\s)/i))
-  .pipe(applyLineBlock('listitem', /^\s*([0-9]+\.\s)/i))
-  .pipe(regroupListItemsLines())
-  .pipe(applyLineBlock('linecodeblock', /^([ ]{4})/i))
-
-  .pipe(byWord('pre'))
-  .pipe(applyTagBlock('codeblock', '```', true))
-  .pipe(controlLength(400, '```'))
-  .pipe(byWord('pre'))
-  .pipe(applyTagBlock('inlinecode', '`'))
-  .pipe(controlLength(150, '`'))
-  .pipe(byWord('pre'))
-  .pipe(applyTagBlock('emphasis', '~~'))
-  .pipe(controlLength(50, '~~'))
-  .pipe(byWord('pre'))
-  .pipe(applyTagBlock('emphasis', '~'))
-  .pipe(controlLength(50, '~'))
-  .pipe(byWord('pre'))
-  .pipe(applyTagBlock('emphasis', '--'))
-  .pipe(controlLength(100, '--'))
-  .pipe(byWord('pre'))
-  .pipe(applyTagBlock('emphasis', '-'))
-  .pipe(controlLength(100, '-'))
-  .pipe(byWord('pre'))
-  .pipe(applyTagBlock('emphasis', '**'))
-  .pipe(controlLength(50, '**'))
-  .pipe(byWord('pre'))
-  .pipe(applyTagBlock('emphasis', '*'))
-  .pipe(controlLength(50, '*'))
-  .pipe(byWord('pre'))
-  .pipe(applyTagBlock('emphasis', '__'))
-  .pipe(controlLength(50, '__'))
-  .pipe(byWord('pre'))
-  .pipe(applyTagBlock('emphasis', '_'))
-  .pipe(controlLength(50, '_'))
-  //
-  .pipe(extractBlock('inlinecode', cleanBlock()))
-  .pipe(extractBlock('codeblock', cleanBlock()))
-  .pipe(extractBlock('linecodeblock', cleanBlock('')))
-  ////
-  .pipe(extractBlock('heading', removeFrontSpace()))
-
-  .pipe(extractBlock('codeblock', normalizeFrontSpace()))
-  .pipe(extractBlock('codeblock', fence(4, 0)))
-
-  .pipe(extractBlock('linecodeblock', normalizeFrontSpace()))
-  .pipe(extractBlock('linecodeblock', fence(4)))
-
-  .pipe(byWord('both'))
-  .pipe(extractBlockWithWhitespace('heading', trimBlock('\n')))
-  .pipe(whenBlock('heading', surroundBlock('\n\n\n', '\n\n')))
-  .pipe(whenBlock('heading', onlyFirstBlock(trimBlock('\n', 'left'))))
-  .pipe(whenBlock('heading', onlyFirstBlock(surroundBlock('\n', ''))))
-  .pipe(through2.obj(function(chunk,_,cb){
-    this.push(chunk)
-    cb()
-  }))
-  //.pipe(extractBlockWithWhitespace('linecodeblock', function(chunk){
-  //  console.log(chunk.tokens)
-  //  console.log('--------------')
-  //}))
-
-  //
-  //
-  .pipe(removeToken('emphasis', /.+/))
-  .pipe(removeToken('heading', /.+/))
-  .pipe(removeToken('codeblock', /.+/))
-  .pipe(removeToken('inlinecode', /.+/))
-
-  //
-  .pipe(extractBlock('heading', colorizeContent(chalk.cyan)))
-  .pipe(extractBlock('linecodeblock', colorizeContent(chalk.white.italic)))
-  .pipe(extractBlock('inlinecode', colorizeContent(chalk.underline)))
-  .pipe(extractBlock('codeblock', colorizeContent(chalk.white.italic)))
-  .pipe(extractBlock('listitem', colorizeToken(chalk.magenta.bold)))
-  //
-  .pipe(extractBlock('emphasis', /_/, colorizeContent(chalk.bold.yellow)))
-  .pipe(extractBlock('emphasis', /-/, colorizeContent(chalk.blue)))
-  .pipe(extractBlock('emphasis', /\*/, colorizeContent(chalk.magenta)))
-  .pipe(extractBlock('emphasis', /~/, colorizeContent(chalk.magenta)))
-
-  //.pipe(afterBlock('heading','\n\n','\n'))
-
-  //.pipe(surroundBlock('==','==', 'emphasis'))
-  //.pipe(surroundBlock('==','', 'heading'))
-  //.pipe(surroundBlock('>>>','<<<', null, 'heading'))
-
-  //.pipe(revealMarkup('linecodeblock'))
-  //.pipe(revealMarkup('listitem'))
-  //.pipe(revealMarkup('heading'))
-  //.pipe(revealMarkup('codeblock'))
-  //.pipe(revealMarkup('emphasis'))
-  //.pipe(revealToken('emphasis'))
-  //.pipe(revealToken('codeblock'))
-  //.pipe(revealToken('inlinecode'))
-  //.pipe(revealToken('heading'))
-  //.pipe(revealToken('listitem'))
-  //.pipe(revealToken('linecodeblock'))
-
-  //.pipe(byLine())
-  //.pipe(less(pumpable))
-  //
-  //.pipe(arrayToStruct())
-  //.pipe(flattenToJson())
-  .pipe(flattenToString())
-
-  .pipe(process.stdout)
-  .on('end', function(){})
 
 
 function less(pumpable) {

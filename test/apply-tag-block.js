@@ -13,6 +13,57 @@ var applyTagBlock = require('../lib/apply-tag-block.js')
 describe('applyLineBlock transformer', function () {
 
   it('can detect and apply a line block structure to the stream', function (done) {
+    multilineToStream(function () {/*
+
+     __md-colorize:__ A binary tool to colorize Markdown content.
+
+     md-colorize [inputfile [outputfile]]
+
+     + Display 'Usage' section from `stdin` with color:
+
+     `cat README.md | md-paragraph -c 'Usage' | md-colorize`
+
+     + Display 'Usage' section from a `file` with color:
+
+     `md-paragraph -c 'Usage' README.md | md-colorize`
+
+
+     ## API
+
+     `md-stream-utils` comes with several stream transform modules.
+
+     ```js
+     module.exports = {
+     tokenizer: function(){
+     return mdTok();
+     },
+     toString: require("./lib/to-string"),
+     flatten: require("./lib/flatten"),
+     filter: require("./lib/filter")
+     }
+     ```
+
+     __byLine__
+
+     - Transforms a `stream of nodes` into a `stream of array of nodes`.
+     - Each push represents a line.
+     */})
+      .pipe(toTokenString())
+      .pipe(byWord('pre'))
+      .pipe(applyTagBlock('codeblock', /[`]{3}/, true))
+      .pipe(byWord('pre'))
+      .pipe(applyTagBlock('codeblock', /[`]{1}/))
+      .pipe(byWord('pre'))
+      .pipe(applyTagBlock('emphasis', /[`-]{1}/))
+      .pipe(through2.obj(function(chunk,_,cb){
+        this.push(chunk)
+        cb()
+      }))
+      .on('data',function(){}).on('end',function(){done()})
+  })
+  return;
+
+  it('can detect and apply a line block structure to the stream', function (done) {
     var expected = [
       [
         { type: 'start:emphasis', power: 2, tokenStr: '__', str: '' },

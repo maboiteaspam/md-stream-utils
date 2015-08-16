@@ -28,7 +28,7 @@ describe('applyLineBlock transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 100)))
+      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
   })
 
   it('fixture test #1', function (done) {
@@ -94,6 +94,6 @@ describe('applyLineBlock transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 100)))
+      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
   })
 })

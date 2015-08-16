@@ -33,7 +33,7 @@ describe('byWord transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 100)))
+      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
   })
 
   it('can split a stream by word, including pre whitespaces', function (done) {
@@ -58,7 +58,7 @@ describe('byWord transformer', function () {
         first = false
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 100)))
+      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
   })
 
   it('can split a stream by word, including post whitespaces', function (done) {
@@ -80,6 +80,6 @@ describe('byWord transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 100)))
+      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
   })
 })

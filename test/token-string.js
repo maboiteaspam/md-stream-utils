@@ -601,17 +601,6 @@ describe('TokenString.filterStr', function () {
     t.filterStr(/some/).toString().should.eql('some text ')
   })
 
-  it('can t find empty strings. It s little weird, to be checked.', function () {
-    var t = new TokenString()
-    t.prependStr('some text ')
-    t.append({type:'token:whatever'})
-    t.appendStr('--')
-    t.appendStr('--')
-
-    t.filterStr(/^$/).tokens.should.eql([
-    ])
-  })
-
   it('does not change original array', function () {
     var t = new TokenString()
     t.prependStr('some text ')
@@ -1390,4 +1379,63 @@ describe('TokenString.forEachReversed', function () {
     k.str.should.eql('some text ')
     t.length().should.eql(0)
   })
+})
+
+describe('TokenString.lessMatch', function () {
+
+  it('can less string given a regexp', function () {
+    var t = new TokenString()
+    '--some text -- here and there --'.split('').forEach(function(c){
+      t.appendStr(c)
+    })
+    t.lessMatch(/--/).toString().should.eql('--')
+    t.lessMatch(/--/).toString().should.eql('')
+    t.lessUntilMatch(/--/)
+    t.lessMatch('--').toString().should.eql('--')
+    t.toString().should.eql(' here and there --')
+  })
+
+})
+
+describe('TokenString.lessUntilMatch', function () {
+
+  it('can less string until given regexp match', function () {
+    var t = new TokenString()
+    '--some text -- here and there --'.split('').forEach(function(c){
+      t.appendStr(c)
+    })
+    t.lessUntilMatch(/[^-]/).toString().should.match('--')
+    t.lessUntilMatch(/[-]{2}/).toString().should.match('some text ')
+    t.lessUntilMatch(/[^-]/).toString().should.match('--')
+    t.lessUntilMatch(/[-]{2}/).toString().should.match(' here and there ')
+  })
+
+})
+
+describe('TokenString.tailMatch', function () {
+
+  it('can tail string given a regexp', function () {
+    var t = new TokenString()
+    '--some text -- here and there --'.split('').forEach(function(c){
+      t.appendStr(c)
+    })
+    t.tailMatch(/--/).toString().should.eql('--')
+  })
+
+})
+
+describe('TokenString.tailUntilMatch', function () {
+
+  it('can tail string until given regexp match', function () {
+    var t = new TokenString()
+    '--some text -- here and there'.split('').forEach(function(c){
+      t.appendStr(c)
+    })
+    t.tailUntilMatch(/[-]+/).toString().should.eql(' here and there')
+    t.tailUntilMatch(/[-]+/).toString().should.eql('')
+    t.tailUntilMatch(/[^-]+/).toString().should.eql('--')
+    t.tailUntilMatch(/[-]+/).toString().should.eql('some text ')
+    t.toString().should.eql('--')
+  })
+
 })

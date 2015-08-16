@@ -1,4 +1,5 @@
 
+var _ = require('underscore')
 var through2 = require('through2')
 require('should')
 
@@ -10,7 +11,7 @@ var byLine = require('../lib/by-line.js')
 
 describe('byLine transformer', function () {
 
-  it('can split a stream by line', function () {
+  it('can split a stream by line', function (done) {
     multilineToStream(function () {/*
      # md-stream-utils
      some
@@ -31,9 +32,10 @@ describe('byLine transformer', function () {
         this.push(chunk)
         cb()
       }))
+      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
   })
 
-  it('can flush the remaining as a packed stream', function () {
+  it('can flush the remaining as a packed stream', function (done) {
     multilineToStream(function () {/*
     # md-stream-utils
     */})
@@ -46,5 +48,6 @@ describe('byLine transformer', function () {
         this.push(chunk)
         cb()
       }))
+      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
   })
 })

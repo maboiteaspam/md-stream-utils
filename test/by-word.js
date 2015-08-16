@@ -82,4 +82,25 @@ describe('byWord transformer', function () {
       }))
       .pipe(through2.obj(_.debounce(function(){done()}, 10)))
   })
+
+  it('can split a stream by word, excluding whitespaces', function (done) {
+    multilineToStream(function () {/*
+     # md-stream-utils
+     some
+     line
+
+     and whitespace   -
+     to parse
+
+
+
+     */})
+      .pipe(toTokenString())
+      .pipe(byWord('both'))
+      .pipe(through2.obj(function(chunk,_,cb){
+        this.push(chunk)
+        cb()
+      }))
+      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+  })
 })

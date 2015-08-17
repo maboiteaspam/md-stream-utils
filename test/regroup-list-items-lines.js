@@ -2,18 +2,8 @@
 var _ = require('underscore')
 var through2 = require('through2')
 require('should')
-
-var thisUtils = require('../lib/utils.js')
-var multilineToStream = thisUtils.multilineToStream
-var applyTagBlock = require('../lib/apply-tag-block.js')
-var TokenString = require('../lib/token-string.js')
-var toTokenString = require('../lib/to-token-string.js')
-var byLine = require('../lib/by-line.js')
-var byWord = require('../lib/by-word.js')
-var regroupListItemsLines = require('../lib/regroup-list-items-lines.js')
-var applyLineBlock = require('../lib/apply-line-block.js')
-var flattenToString = require('../lib/flatten-to-string.js')
-var revealMarkup = require('../lib/reveal-markup.js')
+var mds = require('../index')
+var multilineToStream = mds.utils.multilineToStream
 
 describe('regroupListItemsLines transformer', function () {
 
@@ -58,20 +48,20 @@ describe('regroupListItemsLines transformer', function () {
      - `bgWhite`
 
      */})
-      .pipe(toTokenString())
-      .pipe(byLine())
-      .pipe(applyLineBlock('listitem', /^\s*([\-+]\s)/i))
-      .pipe(applyLineBlock('listitem', /^\s*([0-9]+\.\s)/i))
-      .pipe(regroupListItemsLines())
+      .pipe(mds.toTokenString())
+      .pipe(mds.byLine())
+      .pipe(mds.applyLineBlock('listitem', /^\s*([\-+]\s)/i))
+      .pipe(mds.applyLineBlock('listitem', /^\s*([0-9]+\.\s)/i))
+      .pipe(mds.regroupListItemsLines())
 
-      .pipe(byWord('pre')).pipe(applyTagBlock('codeblock', /[`]{3}/, true))
-      .pipe(byWord('pre')).pipe(applyTagBlock('inlinecode', /[`]{1}/))
+      .pipe(mds.byWord('pre')).pipe(mds.applyTagBlock('codeblock', /[`]{3}/, true))
+      .pipe(mds.byWord('pre')).pipe(mds.applyTagBlock('inlinecode', /[`]{1}/))
 
       .pipe(through2.obj(function(chunk,_,cb){
         this.push(chunk)
         cb()
       }))
-      .pipe(revealMarkup('listitem'))
+      .pipe(mds.revealMarkup('listitem'))
       .on('end', function(){
         console.log('')// prevent mocha to eat the last line when it is not a \n.
         setTimeout(function(){done()},10)

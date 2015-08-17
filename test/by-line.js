@@ -2,13 +2,8 @@
 var _ = require('underscore')
 var through2 = require('through2')
 require('should')
-
-var thisUtils = require('../lib/utils.js')
-var multilineToStream = thisUtils.multilineToStream
-var TokenString = require('../lib/token-string.js')
-var toTokenString = require('../lib/to-token-string.js')
-var byLine = require('../lib/by-line.js')
-var flattenToString = require('../lib/flatten-to-string.js')
+var mds = require('../index')
+var multilineToStream = mds.utils.multilineToStream
 
 describe('byLine transformer', function () {
 
@@ -24,8 +19,8 @@ describe('byLine transformer', function () {
 
 
      */})
-      .pipe(toTokenString())
-      .pipe(byLine())
+      .pipe(mds.toTokenString())
+      .pipe(mds.byLine())
       .pipe(through2.obj(function(chunk,_,cb){
         chunk.str.should.match(/\n$/)
         chunk.last().str.should.match(/^\n$/)
@@ -45,8 +40,8 @@ describe('byLine transformer', function () {
     multilineToStream(function () {/*
     # md-stream-utils
     */})
-      .pipe(toTokenString())
-      .pipe(byLine())
+      .pipe(mds.toTokenString())
+      .pipe(mds.byLine())
       .pipe(through2.obj(function(chunk,_,cb){
         chunk.str.should.match(/^# md-stream-utils$/)
         chunk.last().str.should.match(/^s$/)

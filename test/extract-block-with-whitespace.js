@@ -3,18 +3,7 @@ var _ = require('underscore')
 var through2 = require('through2')
 require('should')
 
-var thisUtils = require('../lib/utils.js')
-var multilineToStream = thisUtils.multilineToStream
-var revealMarkup = require('../lib/reveal-markup.js')
-var flattenToString = require('../lib/flatten-to-string.js')
-var TokenString = require('../lib/token-string.js')
-var toTokenString = require('../lib/to-token-string.js')
-var byLine = require('../lib/by-line.js')
-var byWord = require('../lib/by-word.js')
-var applyLineBlock = require('../lib/apply-line-block.js')
-var applyTagBlock = require('../lib/apply-tag-block.js')
-var controlLength = require('../lib/control-length.js')
-var extractBlockWithWhitespace = require('../lib/extract-block-with-whitespace.js')
+var mds = require('../index')
 
 describe('extractBlockWithWhitespace transformer', function () {
 
@@ -65,20 +54,20 @@ describe('extractBlockWithWhitespace transformer', function () {
      npm install resumer
      ```
      */})
-      .pipe(toTokenString())
-      .pipe(byLine())
-      .pipe(applyLineBlock('linecodeblock', /^([ ]{4})/i))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byLine())
+      .pipe(mds.applyLineBlock('linecodeblock', /^([ ]{4})/i))
 
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('codeblock', /[`]{3}/, true))
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('codeblock', /[`]{3}/, true))
 
-      .pipe(extractBlockWithWhitespace('codeblock', function(buf){
+      .pipe(mds.extractBlockWithWhitespace('codeblock', function(buf){
         //console.log(buf.tokens)
         buf.prependStr('ù')
         buf.appendStr('µ')
       }))
-      .pipe(revealMarkup(/.*/))
-      .pipe(flattenToString())
+      .pipe(mds.revealMarkup(/.*/))
+      .pipe(mds.flattenToString())
       .on('end', function(){
         console.log('')// prevent mocha to eat the last line when it is not a \n.
         setTimeout(function(){done()},10)

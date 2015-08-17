@@ -2,13 +2,8 @@
 var _ = require('underscore')
 var through2 = require('through2')
 require('should')
-
-var thisUtils = require('../lib/utils.js')
-var multilineToStream = thisUtils.multilineToStream
-var TokenString = require('../lib/token-string.js')
-var toTokenString = require('../lib/to-token-string.js')
-var byWord = require('../lib/by-word.js')
-var flattenToString = require('../lib/flatten-to-string.js')
+var mds = require('../index')
+var multilineToStream = mds.utils.multilineToStream
 
 describe('byWord transformer', function () {
 
@@ -25,8 +20,8 @@ describe('byWord transformer', function () {
 
 
      */})
-      .pipe(toTokenString())
-      .pipe(byWord())
+      .pipe(mds.toTokenString())
+      .pipe(mds.byWord())
       .pipe(through2.obj(function(chunk,_,cb){
         if (!expectSpace) chunk.match(/^\S+$/).length.should.eql(1)
         else chunk.match(/^\s+$/).length.should.eql(1)
@@ -55,8 +50,8 @@ describe('byWord transformer', function () {
 
 
      */})
-      .pipe(toTokenString())
-      .pipe(byWord('pre'))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byWord('pre'))
       .pipe(through2.obj(function(chunk,_,cb){
         if (first) chunk.match(/^\S+$/).length.should.eql(1)
         else chunk.match(/^\s+\S*$/).length.should.eql(1)
@@ -84,8 +79,8 @@ describe('byWord transformer', function () {
 
 
      */})
-      .pipe(toTokenString())
-      .pipe(byWord('post'))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byWord('post'))
       .pipe(through2.obj(function(chunk,_,cb){
         chunk.match(/\s+$/).length.should.eql(1)
         this.push(chunk)
@@ -111,8 +106,8 @@ describe('byWord transformer', function () {
 
 
      */})
-      .pipe(toTokenString())
-      .pipe(byWord('both'))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byWord('both'))
       .pipe(through2.obj(function(chunk,_,cb){
         this.push(chunk)
         cb()

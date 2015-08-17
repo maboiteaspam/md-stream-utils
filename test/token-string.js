@@ -1,7 +1,8 @@
 
 require('should')
 
-var TokenString = require('../lib/token-string.js')
+var mds = require('../index')
+var TokenString = mds.TokenString
 
 describe('TokenString.toString', function () {
   it('can render a proper string', function () {

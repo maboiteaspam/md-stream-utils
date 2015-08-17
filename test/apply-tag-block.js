@@ -2,14 +2,8 @@
 var _ = require('underscore')
 var through2 = require('through2')
 require('should')
-
-var thisUtils = require('../lib/utils.js')
-var multilineToStream = thisUtils.multilineToStream
-var TokenString = require('../lib/token-string.js')
-var toTokenString = require('../lib/to-token-string.js')
-var byWord = require('../lib/by-word.js')
-var applyTagBlock = require('../lib/apply-tag-block.js')
-var flattenToString = require('../lib/flatten-to-string.js')
+var mds = require('../index')
+var multilineToStream = mds.utils.multilineToStream
 
 describe('applyTagBlock transformer', function () {
 
@@ -49,13 +43,13 @@ describe('applyTagBlock transformer', function () {
      - Transforms a `stream of nodes` into a `stream of array of nodes`.
      - Each push represents a line.
      */})
-      .pipe(toTokenString())
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('codeblock', /[`]{3}/, true))
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('codeblock', /[`]{1}/))
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('emphasis', /[`-]{1}/))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('codeblock', /[`]{3}/, true))
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('codeblock', /[`]{1}/))
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('emphasis', /[`-]{1}/))
       .pipe(through2.obj(function(chunk,_,cb){
         this.push(chunk)
         cb()
@@ -97,9 +91,9 @@ describe('applyTagBlock transformer', function () {
     multilineToStream(function () {/*
      __md-stream-utils__
      */})
-      .pipe(toTokenString())
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('emphasis', /__/))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('emphasis', /__/))
       .pipe(through2.obj(function(chunk,_,cb){
         (expected.shift() || []).forEach(function (e) {
           var cChunk = chunk.shift()
@@ -157,11 +151,11 @@ describe('applyTagBlock transformer', function () {
      d __md-stream-utils__
      *df*
      */})
-      .pipe(toTokenString())
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('emphasis', '-'))
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('emphasis', '__'))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('emphasis', '-'))
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('emphasis', '__'))
       .pipe(through2.obj(function(chunk,_,cb){
         (expected.shift() || []).forEach(function (e) {
           var cChunk = chunk.shift()
@@ -209,9 +203,9 @@ describe('applyTagBlock transformer', function () {
     multilineToStream(function () {/*
      d __md-stream-utils__
      */})
-      .pipe(toTokenString())
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('emphasis', '__'))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('emphasis', '__'))
       .pipe(through2.obj(function(chunk,_,cb){
         (expected.shift() || []).forEach(function (e) {
           var cChunk = chunk.shift()
@@ -267,11 +261,11 @@ describe('applyTagBlock transformer', function () {
      d __md-stream-utils__
      *df*
      */})
-      .pipe(toTokenString())
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('emphasis', '__'))
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('emphasis', '*'))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('emphasis', '__'))
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('emphasis', '*'))
       .pipe(through2.obj(function(chunk,_,cb){
         (expected.shift() || []).forEach(function (e) {
           var cChunk = chunk.shift()
@@ -329,13 +323,13 @@ describe('applyTagBlock transformer', function () {
      d __md-stream-utils__
      *df*
      */})
-      .pipe(toTokenString())
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('emphasis', '*'))
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('emphasis', '-'))
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('emphasis', '__'))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('emphasis', '*'))
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('emphasis', '-'))
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('emphasis', '__'))
       .pipe(through2.obj(function(chunk,_,cb){
         (expected.shift() || []).forEach(function (e) {
           var cChunk = chunk.shift()

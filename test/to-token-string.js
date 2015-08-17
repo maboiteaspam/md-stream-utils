@@ -2,12 +2,8 @@
 var _ = require('underscore')
 var through2 = require('through2')
 require('should')
-
-var thisUtils = require('../lib/utils.js')
-var multilineToStream = thisUtils.multilineToStream
-var TokenString = require('../lib/token-string.js')
-var toTokenString = require('../lib/to-token-string.js')
-var flattenToString = require('../lib/flatten-to-string.js')
+var mds = require('../index')
+var multilineToStream = mds.utils.multilineToStream
 
 describe('toTokenString transformer', function () {
 
@@ -23,7 +19,7 @@ describe('toTokenString transformer', function () {
 
 
      */})
-      .pipe(toTokenString())
+      .pipe(mds.toTokenString())
       .pipe(through2.obj(function(chunk,_,cb){
         chunk.length().should.eql(1)
         chunk.strLength().should.eql(1)

@@ -2,20 +2,8 @@
 var _ = require('underscore')
 var through2 = require('through2')
 require('should')
-
-var thisUtils = require('../lib/utils.js')
-var multilineToStream = thisUtils.multilineToStream
-var TokenString = require('../lib/token-string.js')
-var toTokenString = require('../lib/to-token-string.js')
-var byLine = require('../lib/by-line.js')
-var byWord = require('../lib/by-word.js')
-var applyLineBlock = require('../lib/apply-line-block.js')
-var getBlockContent = require('../lib/get-block-content.js')
-var extractBlock = require('../lib/extract-block.js')
-var trimBlock = require('../lib/trim-block.js')
-var applyTagBlock = require('../lib/apply-tag-block.js')
-var controlLength = require('../lib/control-length.js')
-var flattenToString = require('../lib/flatten-to-string.js')
+var mds = require('../index')
+var multilineToStream = mds.utils.multilineToStream
 
 describe('getBlockContent transformer', function () {
 
@@ -64,20 +52,20 @@ describe('getBlockContent transformer', function () {
      npm install resumer
      ```
      */})
-      .pipe(toTokenString())
-      .pipe(byLine())
-      .pipe(applyLineBlock('linecodeblock', /^([ ]{4})/i))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byLine())
+      .pipe(mds.applyLineBlock('linecodeblock', /^([ ]{4})/i))
 
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('codeblock', /[`]{3}/, true))
-      .pipe(controlLength(400, '```'))
-      .pipe(byWord('pre'))
-      .pipe(applyTagBlock('inlinecode', '`'))
-      .pipe(controlLength(150, '`'))
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('codeblock', /[`]{3}/, true))
+      .pipe(mds.controlLength(400, '```'))
+      .pipe(mds.byWord('pre'))
+      .pipe(mds.applyTagBlock('inlinecode', '`'))
+      .pipe(mds.controlLength(150, '`'))
 
 
-      .pipe(extractBlock('codeblock', function(buf){
-        getBlockContent(trimBlock('\n', 'right'))(buf)
+      .pipe(mds.extractBlock('codeblock', function(buf){
+        mds.getBlockContent(mds.trimBlock('\n', 'right'))(buf)
         console.log(buf.tokens)
       }))
       .on('end', function(){

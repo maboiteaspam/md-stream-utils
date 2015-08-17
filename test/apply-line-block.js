@@ -2,14 +2,8 @@
 var _ = require('underscore')
 var through2 = require('through2')
 require('should')
-
-var thisUtils = require('../lib/utils.js')
-var multilineToStream = thisUtils.multilineToStream
-var TokenString = require('../lib/token-string.js')
-var toTokenString = require('../lib/to-token-string.js')
-var byLine = require('../lib/by-line.js')
-var flattenToString = require('../lib/flatten-to-string.js')
-var applyLineBlock = require('../lib/apply-line-block.js')
+var mds = require('../index')
+var multilineToStream = mds.utils.multilineToStream
 
 describe('applyLineBlock transformer', function () {
 
@@ -17,9 +11,9 @@ describe('applyLineBlock transformer', function () {
     multilineToStream(function () {/*
      # md-stream-utils
      */})
-      .pipe(toTokenString())
-      .pipe(byLine())
-      .pipe(applyLineBlock('heading', /^\s*(#{1,6})/i))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byLine())
+      .pipe(mds.applyLineBlock('heading', /^\s*(#{1,6})/i))
       .pipe(through2.obj(function(chunk,_,cb){
         chunk.shift().type.should.eql('start:heading')
         chunk.lessType(/token:heading/).length().should.eql(1)
@@ -87,9 +81,9 @@ describe('applyLineBlock transformer', function () {
 
      ## second heading
      */})
-      .pipe(toTokenString())
-      .pipe(byLine())
-      .pipe(applyLineBlock('heading', /^\s*(#{1,6})/i))
+      .pipe(mds.toTokenString())
+      .pipe(mds.byLine())
+      .pipe(mds.applyLineBlock('heading', /^\s*(#{1,6})/i))
       .pipe(through2.obj(function(chunk,_,cb){
         (expected.shift() || []).forEach(function (e) {
           var cChunk = chunk.shift()
@@ -110,9 +104,10 @@ describe('applyLineBlock transformer', function () {
 
   it.skip('fixture test #2', function (done) {
     var stream = through2()
-    stream.pipe(toTokenString())
-      .pipe(byLine())
-      .pipe(applyLineBlock('heading', /^([ ]{4})/))
+    stream
+      .pipe(mds.toTokenString())
+      .pipe(mds.byLine())
+      .pipe(mds.applyLineBlock('heading', /^([ ]{4})/))
       .pipe(through2.obj(function(chunk,_,cb){
         console.log(chunk.tokens)
         this.push(chunk)
@@ -124,13 +119,14 @@ describe('applyLineBlock transformer', function () {
       })
       .pipe(through2.obj(function(c,_,cb){cb()}))
       .pipe(process.stdout);
+
     stream.write(
       'd\n' +
       '\n    dsdfsdf sdfsdfs' +
       '\n    ' +
       '\n    ssfdfsdfds' +
       '\nd'
-    )
-    stream.end()
+    );stream.end();
+
   })
 })

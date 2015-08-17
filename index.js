@@ -6,6 +6,7 @@ var mds = {
   applyTagBlock: require('./lib/apply-tag-block'),
   byLine: require('./lib/by-line'),
   byWord: require('./lib/by-word'),
+  byParagraph: require('./lib/by-paragraph'),
   cleanBlock: require('./lib/clean-block'),
   colorizeContent: require('./lib/colorize-content'),
   colorizeToken: require('./lib/colorize-token'),
@@ -13,6 +14,7 @@ var mds = {
   extractBlock: require('./lib/extract-block'),
   extractBlockWithWhitespace: require('./lib/extract-block-with-whitespace'),
   fence: require('./lib/fence'),
+  filter: require('./lib/filter'),
   flattenToJson: require('./lib/flatten-to-json'),
   flattenToString: require('./lib/flatten-to-string'),
   getBlockContent: require('./lib/get-block-content'),
@@ -65,7 +67,6 @@ mds.tokenize = function () {
 
   var i = 0
   return through2.obj(function (c,_,cb) {
-    tokenizerStream.write(c);
     var that = this
     if (!i) {
       tok2.on('data', function (c) {
@@ -73,6 +74,7 @@ mds.tokenize = function () {
       })
     }
     i++
+    tokenizerStream.write(c);
     cb()
   });
 }
@@ -98,7 +100,6 @@ mds.format = function () {
 
   var i = 0
   return through2.obj(function (c,_,cb) {
-    tokenizerStream.write(c);
     var that = this
     if (!i) {
       tok2.on('data', function (c) {
@@ -106,6 +107,7 @@ mds.format = function () {
       })
     }
     i++
+    tokenizerStream.write(c);
     cb()
   });
 }
@@ -126,7 +128,6 @@ mds.colorize = function () {
 
   var i = 0
   return through2.obj(function (c,_,cb) {
-    tokenizerStream.write(c);
     var that = this
     if (!i) {
       tok2.on('data', function (c) {
@@ -134,6 +135,7 @@ mds.colorize = function () {
       })
     }
     i++
+    tokenizerStream.write(c);
     cb()
   });
 }

@@ -1,3 +1,9 @@
+:package: patch v0.1.1
+
+```
+Fixed dependencies!
+```
+
 :package: minor v0.1.0
 
 ```

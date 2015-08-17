@@ -1,3 +1,12 @@
+:package: minor v0.1.0
+
+```
+This release introduce a whole new markdown parser.
+It aims to provide specfic support for command line.
+It makes use of streams to tokenize the content.
+It provides much better support with more tokens and better transforms.
+```
+
 :package: patch v0.0.8
 
 ```

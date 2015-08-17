@@ -169,53 +169,8 @@ fs.createReadStream('README.md')
 
   .pipe(process.stdout)
   .on('end', function(){})
-multilineToStream(function () {/*
- # md-stream-utils
-
- Set of utilities to work with Markdown.
-
- ## sub section
-
- The **basis** of __this__ work come ~from~ https://github.com/alanshaw/md-tokenizer
-
- __An alternative to https://github.com/chjj/marked__
-
- ## Installation
- Run the following commands to download and install the application:
-
- *Binary install*
- ```sh   npm i md-stream-utils -g ```
-
- *API install*
- ```sh   npm i md-stream-utils --save ```
-
- ## Usage
-
- __md-block:__ A binary tool to parse Markdown content by block.
- + Display 'Usage' section from a `file` with color:
-
- `md-paragraph -c 'Usage' README.md | md-colorize`
 
 
- ## API
-
- `md-stream-utils` comes with several stream transform modules.
-
-     some code with indent `block`
-
-
- ## Ordered list
-
- 1. Some content
- 2. Which can be
- multiline
- 3. We ll make sure it gets fenced
-
-
- */})
-  ;
-
-  //fs.createReadStream('README2.md')
 //var pumpable = new PausableStream()
 //pumpable.pause()
 

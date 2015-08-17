@@ -15,10 +15,11 @@ var extractBlock = require('../lib/extract-block.js')
 var trimBlock = require('../lib/trim-block.js')
 var applyTagBlock = require('../lib/apply-tag-block.js')
 var controlLength = require('../lib/control-length.js')
+var flattenToString = require('../lib/flatten-to-string.js')
 
-describe('toTokenString transformer', function () {
+describe('getBlockContent transformer', function () {
 
-  it('can split any string to a TokenString', function (done) {
+  it.skip('can split any string to a TokenString', function (done) {
     multilineToStream(function () {/*
 
      ``` js
@@ -79,6 +80,11 @@ describe('toTokenString transformer', function () {
         getBlockContent(trimBlock('\n', 'right'))(buf)
         console.log(buf.tokens)
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 })

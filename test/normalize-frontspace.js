@@ -18,10 +18,11 @@ var fence = require('../lib/fence.js')
 var removeFrontSpace = require('../lib/remove-frontspace.js')
 var normalizeFrontSpace = require('../lib/normalize-frontspace.js')
 var cleanBlock = require('../lib/clean-block.js')
+var flattenToString = require('../lib/flatten-to-string.js')
 
-describe('toTokenString transformer', function () {
+describe('normalizeFrontSpace transformer', function () {
 
-  it('can split any string to a TokenString', function (done) {
+  it.skip('can split any string to a TokenString', function (done) {
     multilineToStream(function () {/*
 
      # methods
@@ -57,6 +58,11 @@ describe('toTokenString transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 })

@@ -15,9 +15,9 @@ var applyLineBlock = require('../lib/apply-line-block.js')
 var flattenToString = require('../lib/flatten-to-string.js')
 var revealMarkup = require('../lib/reveal-markup.js')
 
-describe('toTokenString transformer', function () {
+describe('regroupListItemsLines transformer', function () {
 
-  it('can split any string to a TokenString', function (done) {
+  it.skip('can split any string to a TokenString', function (done) {
     multilineToStream(function () {/*
 
 
@@ -72,11 +72,11 @@ describe('toTokenString transformer', function () {
         cb()
       }))
       .pipe(revealMarkup('listitem'))
-      .pipe(flattenToString())
       .on('end', function(){
         console.log('')// prevent mocha to eat the last line when it is not a \n.
         setTimeout(function(){done()},10)
       })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
       .pipe(process.stdout)
   })
 })

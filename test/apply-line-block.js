@@ -8,6 +8,7 @@ var multilineToStream = thisUtils.multilineToStream
 var TokenString = require('../lib/token-string.js')
 var toTokenString = require('../lib/to-token-string.js')
 var byLine = require('../lib/by-line.js')
+var flattenToString = require('../lib/flatten-to-string.js')
 var applyLineBlock = require('../lib/apply-line-block.js')
 
 describe('applyLineBlock transformer', function () {
@@ -28,7 +29,12 @@ describe('applyLineBlock transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(done, 10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 
   it('fixture test #1', function (done) {
@@ -94,10 +100,15 @@ describe('applyLineBlock transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 
-  it('fixture test #2', function (done) {
+  it.skip('fixture test #2', function (done) {
     var stream = through2()
     stream.pipe(toTokenString())
       .pipe(byLine())
@@ -107,7 +118,12 @@ describe('applyLineBlock transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)));
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout);
     stream.write(
       'd\n' +
       '\n    dsdfsdf sdfsdfs' +

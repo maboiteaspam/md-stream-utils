@@ -16,9 +16,9 @@ var applyTagBlock = require('../lib/apply-tag-block.js')
 var controlLength = require('../lib/control-length.js')
 var extractBlockWithWhitespace = require('../lib/extract-block-with-whitespace.js')
 
-describe('toTokenString transformer', function () {
+describe('extractBlockWithWhitespace transformer', function () {
 
-  it('can split any string to a TokenString', function (done) {
+  it.skip('can split any string to a TokenString', function (done) {
     multilineToStream(function () {/*
      qsdsqd
 

@@ -7,6 +7,7 @@ var thisUtils = require('../lib/utils.js')
 var multilineToStream = thisUtils.multilineToStream
 var TokenString = require('../lib/token-string.js')
 var toTokenString = require('../lib/to-token-string.js')
+var flattenToString = require('../lib/flatten-to-string.js')
 
 describe('toTokenString transformer', function () {
 
@@ -29,6 +30,11 @@ describe('toTokenString transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 })

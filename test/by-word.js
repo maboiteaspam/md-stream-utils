@@ -8,6 +8,7 @@ var multilineToStream = thisUtils.multilineToStream
 var TokenString = require('../lib/token-string.js')
 var toTokenString = require('../lib/to-token-string.js')
 var byWord = require('../lib/by-word.js')
+var flattenToString = require('../lib/flatten-to-string.js')
 
 describe('byWord transformer', function () {
 
@@ -33,7 +34,12 @@ describe('byWord transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 
   it('can split a stream by word, including pre whitespaces', function (done) {
@@ -58,7 +64,12 @@ describe('byWord transformer', function () {
         first = false
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 
   it('can split a stream by word, including post whitespaces', function (done) {
@@ -80,10 +91,15 @@ describe('byWord transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 
-  it('can split a stream by word, excluding whitespaces', function (done) {
+  it.skip('can split a stream by word, excluding whitespaces', function (done) {
     multilineToStream(function () {/*
      # md-stream-utils
      some
@@ -101,6 +117,11 @@ describe('byWord transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 })

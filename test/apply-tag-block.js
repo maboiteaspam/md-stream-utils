@@ -9,10 +9,11 @@ var TokenString = require('../lib/token-string.js')
 var toTokenString = require('../lib/to-token-string.js')
 var byWord = require('../lib/by-word.js')
 var applyTagBlock = require('../lib/apply-tag-block.js')
+var flattenToString = require('../lib/flatten-to-string.js')
 
-describe('applyLineBlock transformer', function () {
+describe('applyTagBlock transformer', function () {
 
-  it('can detect and apply a line block structure to the stream', function (done) {
+  it.skip('can detect and apply a line block structure to the stream', function (done) {
     multilineToStream(function () {/*
 
      __md-colorize:__ A binary tool to colorize Markdown content.
@@ -59,9 +60,13 @@ describe('applyLineBlock transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .on('data',function(){}).on('end',function(){done()})
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
-  return;
 
   it('can detect and apply a line block structure to the stream', function (done) {
     var expected = [
@@ -105,7 +110,12 @@ describe('applyLineBlock transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 
   it('can detect and apply a line block structure to the stream', function (done) {
@@ -162,7 +172,12 @@ describe('applyLineBlock transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 
   it('can detect and apply a line block structure to the stream', function (done) {
@@ -207,7 +222,12 @@ describe('applyLineBlock transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 
   it('can detect and apply a line block structure to the stream', function (done) {
@@ -262,7 +282,12 @@ describe('applyLineBlock transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 
   it('can detect and apply a line block structure to the stream', function (done) {
@@ -321,7 +346,12 @@ describe('applyLineBlock transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 
 })

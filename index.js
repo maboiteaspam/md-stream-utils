@@ -1,13 +1,30 @@
-var mdTok = require("md-tokenizer");
 module.exports = {
-  tokenizer: function(){
-    return mdTok();
-  },
-  byLine: require("./lib/by-line"),
-  byBlock: require("./lib/by-block"),
-  byParapgraph: require("./lib/by-paragraph"),
-  cliColorize: require("./lib/cli-colorize"),
-  toString: require("./lib/to-string"),
-  flatten: require("./lib/flatten"),
-  filter: require("./lib/filter")
+  applyLineBlock: require('./lib/apply-line-block'),
+  applyTagBlock: require('./lib/apply-tag-block'),
+  byLine: require('./lib/by-line'),
+  byWord: require('./lib/by-word'),
+  cleanBlock: require('./lib/clean-block'),
+  colorizeContent: require('./lib/colorize-content'),
+  colorizeToken: require('./lib/colorize-token'),
+  controlLength: require('./lib/control-length'),
+  extractBlock: require('./lib/extract-block'),
+  extractBlockWithWhitespace: require('./lib/extract-block-with-whitespace'),
+  fence: require('./lib/fence'),
+  flattenToJson: require('./lib/flatten-to-json'),
+  flattenToString: require('./lib/flatten-to-string'),
+  getBlockContent: require('./lib/get-block-content'),
+  hideToken: require('./lib/hide-token'),
+  markPossibleTokens: require('./lib/mark-possible-tokens'),
+  RegExp: require('./lib/regexp-quote'),
+  regroupListItems: require('./lib/regroup-list-items'),
+  removeFrontspace: require('./lib/remove-frontspace'),
+  resolveColors: require('./lib/resolve-colors'),
+  revealMarkup: require('./lib/reveal-markup'),
+  revealToken: require('./lib/reveal-token'),
+  surroundBlock: require('./lib/surround-block'),
+  surroundBlockContent: require('./lib/surround-block-content'),
+  toTokenString: require('./lib/to-token-string'),
+  trimBlock: require('./lib/trim-block'),
+  utils: require('./lib/utils'),
+  whenBlock: require('./lib/when-block')
 }

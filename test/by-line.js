@@ -8,6 +8,7 @@ var multilineToStream = thisUtils.multilineToStream
 var TokenString = require('../lib/token-string.js')
 var toTokenString = require('../lib/to-token-string.js')
 var byLine = require('../lib/by-line.js')
+var flattenToString = require('../lib/flatten-to-string.js')
 
 describe('byLine transformer', function () {
 
@@ -32,7 +33,12 @@ describe('byLine transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 
   it('can flush the remaining as a packed stream', function (done) {
@@ -48,6 +54,11 @@ describe('byLine transformer', function () {
         this.push(chunk)
         cb()
       }))
-      .pipe(through2.obj(_.debounce(function(){done()}, 10)))
+      .on('end', function(){
+        console.log('')// prevent mocha to eat the last line when it is not a \n.
+        setTimeout(function(){done()},10)
+      })
+      .pipe(through2.obj(function(c,_,cb){cb()}))
+      .pipe(process.stdout)
   })
 })

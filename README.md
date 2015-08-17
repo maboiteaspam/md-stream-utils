@@ -63,149 +63,28 @@ __md-colorize:__ A binary tool to colorize Markdown content.
 
 ## API
 
-`md-stream-utils` comes with several stream transform modules.
+Please check module index file.
+
+For example to tokenize, format, color, 
+and output a mardown file with interactive 
+support, 
+it looks like this
 
 ```js
-module.exports = {
-  tokenizer: function(){
-    return mdTok();
-  },
-  byLine: require("./lib/by-line"),
-  byBlock: require("./lib/by-block"),
-  byParapgraph: require("./lib/by-paragraph"),
-  cliColorize: require("./lib/cli-colorize"),
-  toString: require("./lib/to-string"),
-  flatten: require("./lib/flatten"),
-  filter: require("./lib/filter")
-}
+    var pumpable = new mds.PausableStream()
+    pumpable.pause()
+    input
+      .pipe(mds.toTokenString())
+      .pipe(argv._.length > 0 ? pumpable.stream : through2.obj())
+      .pipe(mds.tokenize())
+      .pipe(mds.format())
+      .pipe(mds.colorize())
+      .pipe(argv._.length > 0 ? mds.less(pumpable) : through2.obj())
+      .pipe(mds.flattenToString(mds.resolveColors.transform))
+      .pipe(output)
 ```
 
-__tokenizer__
-
-- It is the original https://github.com/alanshaw/md-tokenizer
-
-```js
-    var mdUtils = require('../index.js')
-    
-    process.stdin
-      .pipe(mdUtils.tokenizer())
-      .pipe(mdUtils.toString())
-      .pipe(process.stdout)
-```
-
-__byLine__
-
-- Transforms a `stream of nodes` into a `stream of array of nodes`.
-- Each push represents a line.
-
-```js
-    var mdUtils = require('../index.js')
-        
-    process.stdin
-      .pipe(mdUtils.tokenizer())
-      .pipe(mdUtils.byLine())
-      .pipe(mdUtils.cliColorize())
-      .pipe(mdUtils.toString({append: '--'}))
-      .pipe(process.stdout)
-```
-
-__byBlock__
-
-- Transforms a `stream of nodes` into a `stream of array of nodes`.
-- Each push is an `array of nodes` representing a `block`.
-- A `block` is an `array of nodes` starting with one of `heading`, `code-block`, `list-item` nodes.
-
-```js
-    var mdUtils = require('../index.js')
-    
-    process.stdin
-      .pipe(mdUtils.tokenizer())
-      .pipe(mdUtils.byBlock())
-      .pipe(mdUtils.cliColorize())
-      .pipe(mdUtils.toString({append: '--'}))
-      .pipe(process.stdout)
-
-```
-
-__byParapgraph__
-
-- Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of array of nodes`.
-- Each push is an `array of nodes` representing a `paragraph`.
-- A `paragraph` is an `array of nodes` starting with a `heading` node and an ending with a `new line` node.
-
-```js
-    var mdUtils = require('../index.js')
-    
-    process.stdin
-      .pipe(mdUtils.tokenizer())
-      .pipe(mdUtils.byParapgraph())
-      .pipe(mdUtils.cliColorize())
-      .pipe(mdUtils.toString({append: '--'}))
-      .pipe(process.stdout)
-```
-
-__cliColorize__
-
-- Transforms a `stream of array of nodes` or a `stream of nodes` into a corresponding colorized stream with `chalk`.
-- Each push is an `array of nodes` or a `node`.
-
-```js
-    var mdUtils = require('../index.js')
-    
-    process.stdin
-      .pipe(mdUtils.tokenizer())
-      .pipe(mdUtils.cliColorize())
-      .pipe(mdUtils.toString())
-      .pipe(process.stdout)
-```
-
-__toString__
-
-- Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of strings`.
-- Each push is a `string` representing a `node` or an `array of nodes`.
-
-```js
-    var mdUtils = require('../index.js')
-    
-    process.stdin
-      .pipe(mdUtils.tokenizer())
-      .pipe(mdUtils.cliColorize())
-      .pipe(mdUtils.toString())
-      .pipe(process.stdout)
-```
-
-__flatten__
-
-- Transforms a `stream of array of nodes` or a `stream of nodes` into a `stream of nodes`.
-- Each push represents a `node`.
-
-```js
-    var mdUtils = require('../index.js')
-    process.stdin
-      .pipe(mdUtils.tokenizer())
-      .pipe(mdUtils.byParapgraph())
-      .pipe(mdUtils.flatten())
-      .pipe(mdUtils.toString())
-      .pipe(process.stdout)
-```
-
-__filter__
-
-- Filters a `stream of array of nodes` or a `stream of nodes`.
-- Each push represents a `node`.
-
-```js
-    var mdUtils = require('../index.js')
-        
-    process.stdin
-      .pipe(mdUtils.tokenizer())
-      .pipe(mdUtils.filter({type: 'text'}))
-      .pipe(mdUtils.cliColorize())
-      .pipe(mdUtils.toString())
-      .pipe(process.stdout)
-```
-
-
+There are a bunch of filters, transformers available under `lib/`.
 
 ## How to contribute
 
@@ -219,6 +98,7 @@ __filter__
    message.
 
 ## License
+
 See the [LICENSE](./LICENSE) file.
 
 ## Notes
@@ -227,4 +107,6 @@ It is not perfectly github markdown compatible.
 
 ## Todo
 
-write the tests
+- improve the tests
+- provide configurable colors
+- fix background display

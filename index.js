@@ -15,6 +15,7 @@ module.exports = {
   getBlockContent: require('./lib/get-block-content'),
   hideToken: require('./lib/hide-token'),
   markPossibleTokens: require('./lib/mark-possible-tokens'),
+  maxLength: require('./lib/max-length'),
   normalizeFrontspace: require('./lib/normalize-frontspace'),
   RegExp: require('./lib/regexp-quote'),
   regroupListItemsLines: require('./lib/regroup-list-items-lines'),

@@ -4,176 +4,82 @@ var through2 = require("through2")
 var fs = require('fs')
 var chalk = require('chalk')
 var _ = require('underscore')
-
-RegExp = require('./lib/regexp-quote.js')
+var mds = require('./index')
+RegExp = mds.RegExp
 
 var argv = require('minimist')(process.argv.slice(2));
 
-
-var TokenString = require('./lib/token-string.js')
-var thisUtils = require('./lib/utils.js')
-var multilineToStream = thisUtils.multilineToStream
-var getCallerLocation = thisUtils.getCallerLocation
-
-var applyTagBlock = require('./lib/apply-tag-block.js')
-var applyLineBlock = require('./lib/apply-line-block.js')
-var byLine = require('./lib/by-line.js')
-var byWord = require('./lib/by-word.js')
-var controlLength = require('./lib/control-length.js')
-var colorizeToken = require('./lib/colorize-token.js')
-var colorizeContent = require('./lib/colorize-content.js')
-var cleanBlock = require('./lib/clean-block.js')
-var extractBlockWithWhitespace = require('./lib/extract-block-with-whitespace.js')
-var extractBlock = require('./lib/extract-block.js')
-var fence = require('./lib/fence.js')
-var flattenToString = require('./lib/flatten-to-string.js')
-var flattenToJson = require('./lib/flatten-to-json.js')
-var getBlockContent = require('./lib/get-block-content.js')
-var hideToken = require('./lib/hide-token.js')
-var markPossibleTokens = require('./lib/mark-possible-tokens.js')
-var normalizeFrontSpace = require('./lib/normalize-frontspace.js')
-var revealMarkup = require('./lib/reveal-markup.js')
-var removeToken = require('./lib/remove-token.js')
-var removeFrontSpace = require('./lib/remove-frontspace.js')
-var resolveColors = require('./lib/resolve-colors.js')
-var regroupListItemsLines = require('./lib/regroup-list-items-lines.js')
-var stringToStruct = require('./lib/to-token-string.js')
-var surroundBlock = require('./lib/surround-block.js')
-var surroundBlockContent = require('./lib/surround-block-content.js')
-var trimBlock = require('./lib/trim-block.js')
-var whenBlock = require('./lib/when-block.js')
-
+var TokenString = mds.TokenString
+var multilineToStream = mds.utils.multilineToStream
 
 fs.createReadStream('README.md');
 fs.createReadStream('test/fixtures/chalk.md');
 fs.createReadStream('test/fixtures/changelog-maker.md');
 fs.createReadStream('test/fixtures/resumer.md');
 
+var pumpable = new PausableStream()
+
 fs.createReadStream('README.md')
-  .pipe(stringToStruct())
+  .pipe(mds.toTokenString())
 
-  //.pipe(pumpable.stream)
+  .pipe(pumpable.stream)
 
-  .pipe(markPossibleTokens(['-','_','*','#','~','`']))
-  //
-  .pipe(byLine())
-  .pipe(applyLineBlock('heading', /^\s*(#{1,6})/i))
-  .pipe(applyLineBlock('listitem', /^\s*([\-+*]\s)/i))
-  .pipe(applyLineBlock('listitem', /^\s*([0-9]+\.\s)/i))
-  .pipe(regroupListItemsLines())
-  .pipe(applyLineBlock('linecodeblock', /^([ ]{4})/i))
+  .pipe(mds.markPossibleTokens(['-','_','*','#','~','`']))
+  .pipe(mds.byLine())
+  .pipe(mds.applyLineBlock('heading', /^\s*(#{1,6})/i))
+  .pipe(mds.applyLineBlock('listitem', /^\s*([\-+*]\s)/i))
+  .pipe(mds.applyLineBlock('listitem', /^\s*([0-9]+\.\s)/i))
+  .pipe(mds.regroupListItemsLines())
+  .pipe(mds.applyLineBlock('linecodeblock', /^([ ]{4})/i))
+  .pipe(mds.applyTagBlock('codeblock', /[`]{3}/, true))
+  .pipe(mds.applyTagBlock('inlinecode', /[`]{1}/))
+  .pipe(mds.applyTagBlock('emphasis', /[~]{2}/))
+  .pipe(mds.applyTagBlock('emphasis', /[~]{1}/))
+  .pipe(mds.applyTagBlock('emphasis', /[~]{2}/))
+  .pipe(mds.applyTagBlock('emphasis', /[*]{2}/))
+  .pipe(mds.applyTagBlock('emphasis', /[*]{1}/))
+  .pipe(mds.applyTagBlock('emphasis', /[_]{2}/))
+  .pipe(mds.applyTagBlock('emphasis', /[_]{1}/))
 
-  .pipe(applyTagBlock('codeblock', /[`]{3}/, true))
-  .pipe(controlLength(400, '```'))
-  .pipe(applyTagBlock('inlinecode', /[`]{1}/))
-  .pipe(controlLength(150, '`'))
-  .pipe(applyTagBlock('emphasis', /[~]{2}/))
-  .pipe(controlLength(50, '~~'))
-  .pipe(applyTagBlock('emphasis', /[~]{1}/))
-  .pipe(controlLength(50, '~'))
-  .pipe(applyTagBlock('emphasis', /[~]{2}/))
-  .pipe(controlLength(100, '--'))
-  //.pipe(applyTagBlock('emphasis', '-'))
-  //.pipe(controlLength(100, '-'))
-  //.pipe(byWord('pre'))
-  .pipe(applyTagBlock('emphasis', /[*]{2}/))
-  .pipe(controlLength(50, '**'))
-  .pipe(applyTagBlock('emphasis', /[*]{1}/))
-  .pipe(controlLength(50, '*'))
-  .pipe(applyTagBlock('emphasis', /[_]{2}/))
-  .pipe(controlLength(50, '__'))
-  .pipe(applyTagBlock('emphasis', /[_]{1}/))
-  .pipe(controlLength(50, '_'))
-  //
-  .pipe(extractBlock('codeblock', cleanBlock()))
-  .pipe(extractBlock('inlinecode', cleanBlock()))
-  .pipe(extractBlock('linecodeblock', cleanBlock('')))
-  //
-  .pipe(extractBlock('heading', removeFrontSpace()))
+  .pipe(mds.extractBlock('codeblock', mds.cleanBlock()))
+  .pipe(mds.extractBlock('inlinecode', mds.cleanBlock()))
+  .pipe(mds.extractBlock('linecodeblock', mds.cleanBlock('')))
 
-  //.pipe(extractBlockWithWhitespace('codeblock', function(buf){
-  //  trimBlock('\n')(buf)
-  //  getBlockContent(trimBlock(/\s+/, 'both'))(buf)
-  //  getBlockContent(function(b){
-  //    if (!b.split('\n')[0].match(/[a-z]{2,4}\n$/)) {
-  //      b.prependStr('\n')
-  //    }
-  //  })(buf)
-  //  buf.prependStr('\n')
-  //  buf.appendStr('\n')
-  //}))
-  ////
-  .pipe(extractBlock('codeblock', normalizeFrontSpace()))
-  .pipe(extractBlock('codeblock', getBlockContent(fence(4, 0))))
-  //////
-  //.pipe(byWord('both'))
-  //.pipe(extractBlockWithWhitespace('heading', trimBlock('\n')))
-  //.pipe(whenBlock('heading', surroundBlock('\n\n\n', '\n\n')))
-  //.pipe(whenBlock('heading', onlyFirstBlock(trimBlock('\n', 'left'))))
-  //.pipe(whenBlock('heading', onlyFirstBlock(surroundBlock('\n', ''))))
-  //.pipe(through2.obj(function(chunk,_,cb){
-  //  this.push(chunk)
-  //  cb()
-  //}))
-  //.pipe(extractBlockWithWhitespace('linecodeblock', function(chunk){
-  //  console.log(chunk.tokens)
-  //  console.log('--------------')
-  //}))
+  .pipe(mds.extractBlock('heading', mds.getBlockContent(mds.removeFrontspace())))
+  .pipe(mds.extractBlock(/listitem/, mds.getBlockContent(mds.removeFrontspace())))
 
-  //
-  //
-  //.pipe(removeToken('emphasis', /.+/))
-  .pipe(removeToken('heading', /.+/))
-  .pipe(removeToken('codeblock', /.+/))
-  .pipe(removeToken('inlinecode', /.+/))
-  .pipe(removeToken('emphasis', /.+/))
+  .pipe(mds.extractBlock('codeblock', mds.normalizeFrontspace()))
 
-  //
-  .pipe(extractBlock('linecodeblock', colorizeContent(chalk.white.italic)))
-  .pipe(extractBlock('inlinecode', colorizeContent(chalk.white.italic)))
-  .pipe(extractBlock('codeblock', colorizeContent(chalk.white.italic)))
-  //
-  .pipe(extractBlock('emphasis', /_/, colorizeContent(chalk.bold)))
-  //.pipe(extractBlock('emphasis', /-/, colorizeContent(chalk.blue)))
-  .pipe(extractBlock('emphasis', /\*/, colorizeContent(chalk.bold)))
-  .pipe(extractBlock('emphasis', /~/, colorizeContent(chalk.strikethrough)))
 
-  .pipe(extractBlock('listitem', colorizeToken(chalk.magenta.bold)))
-  .pipe(extractBlock('heading', colorizeContent(chalk.bold.underline.cyan)))
-  .pipe(resolveColors())
+  .pipe(mds.extractBlock('codeblock', mds.getBlockContent(mds.fence(function () {return [4,0]}))))
 
-  //.pipe(afterBlock('heading','\n\n','\n'))
+  .pipe(mds.extractBlock(/listitem/, function(buf) {
+      var t = buf.first().tokenStr.length;
+      buf.prependStr(' ')
+      mds.getBlockContent(mds.fence(function () {return [t+1, 0]}))(buf)
+    }
+  ))
 
-  //.pipe(surroundBlock('==','==', 'emphasis'))
-  //.pipe(surroundBlock('==','', 'heading'))
-  //.pipe(surroundBlock('>>>','<<<', null, 'heading'))
+  .pipe(mds.removeToken('heading', /.+/))
+  .pipe(mds.removeToken('codeblock', /.+/))
+  .pipe(mds.removeToken('inlinecode', /.+/))
+  .pipe(mds.removeToken('emphasis', /.+/))
 
-  //.pipe(revealMarkup('linecodeblock'))
-  //.pipe(revealMarkup('listitem'))
-  //.pipe(revealMarkup('heading'))
-  //.pipe(revealMarkup('codeblock'))
-  //.pipe(revealMarkup('emphasis'))
-  //.pipe(revealToken('emphasis'))
-  //.pipe(revealToken('codeblock'))
-  //.pipe(revealToken('inlinecode'))
-  //.pipe(revealToken('heading'))
-  //.pipe(revealToken('listitem'))
-  //.pipe(revealToken('linecodeblock'))
 
-  //.pipe(byLine())
-  //.pipe(less(pumpable))
-  //
-  //.pipe(arrayToStruct())
-  //.pipe(flattenToJson())
-  .pipe(flattenToString())
+  .pipe(mds.extractBlock('linecodeblock', mds.colorizeContent(chalk.white.italic)))
+  .pipe(mds.extractBlock('inlinecode', mds.colorizeContent(chalk.white.italic)))
+  .pipe(mds.extractBlock('codeblock', mds.colorizeContent(chalk.white.italic)))
+  .pipe(mds.extractBlock('emphasis', /_/, mds.colorizeContent(chalk.bold)))
+  .pipe(mds.extractBlock('emphasis', /\*/, mds.colorizeContent(chalk.bold)))
+  .pipe(mds.extractBlock('emphasis', /~/, mds.colorizeContent(chalk.strikethrough)))
+  .pipe(mds.extractBlock('listitem', mds.colorizeToken(chalk.magenta.bold)))
+  .pipe(mds.extractBlock('heading', mds.colorizeContent(chalk.bold.underline.cyan)))
 
+  .pipe(less(pumpable))
+
+  .pipe(mds.flattenToString(mds.resolveColors.transform))
   .pipe(process.stdout)
   .on('end', function(){})
-
-
-//var pumpable = new PausableStream()
-//pumpable.pause()
-
 
 function less(pumpable) {
 
@@ -184,14 +90,14 @@ function less(pumpable) {
   var size = process.stdout.getWindowSize()
   var height = size[1]
   var width = size[0]
-  height--
 
   var pumpMoreLines = function(lines){
     var f = 1
     if (!pumpable.keepPump) {
       pumpable.pumpUntil(function(c){
-        if (c.match(/\n/)) {
-          f++
+        var h = c.match(/\n/)
+        if (h) {
+          f+= h.length
         }
         return f>lines
       })
@@ -199,81 +105,93 @@ function less(pumpable) {
     }
   }
 
-  var printToScreen = function(sub){
-    require('readline').cursorTo(process.stdout, 0, 0)
-    require('readline').clearLine(process.stdout, 1)
-    var printedHeight = 0
-    var linelen = 0
-    sub.forEach(function (c) {
+  var wholeBuf = new mds.TokenString()
+  var curPosition = 0
+  var printToScreen = function(p){
+    var h = 0
+    var w = 0
+    var str = new mds.TokenString()
+    wholeBuf.forEach(function (c) {
+      w+= c.str.length;
       if (c.str.match(/\n/)) {
-        linelen = 0
-        require('readline').cursorTo(process.stdout, 0, printedHeight)
-        require('readline').clearLine(process.stdout, 1)
-        printedHeight++
-      } else if (printedHeight<=height) {
-        if (linelen+c.str.length>=width) {
-          require('readline').cursorTo(process.stdout, 0, printedHeight)
-          require('readline').clearLine(process.stdout, 1)
-          printedHeight++
-          linelen =0
-        }
-        linelen+=c.str.length
+        w = 0
+        h++
+      }
+      if (w>width) {
+        w = 0
+        h++
+      }
+      if (h>=p && h<p+height) {
+        str.append(c)
       }
     })
-    require('readline').cursorTo(process.stdout, 0, height)
-    require('readline').clearLine(process.stdout, 1)
+    return str;
   }
-  printToScreen = _.throttle(printToScreen, 20, true)
 
-
-  var wholeBuf = []
-  var curPosition = 0
-
-  var moveUp = _.throttle(function(){
-    if (curPosition>0) {
-      curPosition--
-      var sub = wholeBuf.slice(curPosition, curPosition+height)
-      printToScreen(sub)
-    }
-  }, 30, true)
-  var moveDown = _.throttle(function(){
-    if (curPosition+height<wholeBuf.length) {
-      curPosition++
-      var sub = wholeBuf.slice(curPosition, curPosition+height)
-      printToScreen(sub)
-    }
-    if (wholeBuf.length-curPosition-height<=10) {
-      pumpable.pause()
-      pumpMoreLines(4)
-    }
-  }, 30, true)
-  stdin.resume()
-  listenStdin({
-    '\u0003': function(){// ctrl-c ( end of text )
-      process.exit();
-    },
-    '\u001bOA': moveUp,
-    '\u001b[A': moveUp,
-    '\u001bOB': moveDown,
-    '\u001b[B': moveDown,
-    '\u001bOD': function(){}, //left
-    '\u001bOC': function(){} //right
-  })
-  pumpMoreLines(height+5)
-
+  var printed = false
   var i = 0
+  var totalHeight = 0
   return through2.obj(function(chunk, enc, callback){
-
-    wholeBuf.concat(chunk)
-    i++
-    if(i===height) {
-      printToScreen(wholeBuf.slice(curPosition, curPosition+height))
+    var that = this;
+    var w = 0
+    chunk.forEach(function(c){
+      w+= c.str.length;
+      if (c.str.match(/\n/)) {
+        w = 0
+        totalHeight++
+      }
+      if (w>width) {
+        w = 0
+        totalHeight++
+      }
+    })
+    wholeBuf.concat(chunk);
+    var h = chunk.match(/\n/g);
+    i += h && h.length || 0;
+    if(!printed && i>=height) {
+      printed = true
       pumpable.pause()
-      pumpMoreLines(10)
+      that.push(printToScreen(curPosition))
+
+      var moveUp = _.throttle(function(){
+        if (curPosition>0) {
+          curPosition--
+          require('readline').cursorTo(process.stdout, 0, 0)
+          require('readline').clearScreenDown(process.stdout)
+          require('readline').cursorTo(process.stdout, 0, 0)
+          that.push(printToScreen(curPosition))
+        }
+      }, 30, true)
+      var moveDown = _.throttle(function(){
+        if (curPosition+height<totalHeight) {
+          curPosition++
+          require('readline').cursorTo(process.stdout, 0, 0)
+          require('readline').clearScreenDown(process.stdout)
+          require('readline').cursorTo(process.stdout, 0, 0)
+          that.push(printToScreen(curPosition))
+        }
+        if (curPosition+height-totalHeight<10) {
+          pumpMoreLines(4)
+        }
+      }, 30, true)
+
+      listenStdin({
+        '\u0003': function(){// ctrl-c ( end of text )
+          process.exit();
+        },
+        '\u001bOA': moveUp,
+        '\u001b[A': moveUp,
+        '\u001bOB': moveDown,
+        '\u001b[B': moveDown,
+        '\u001bOD': function(){}, //left
+        '\u001bOC': function(){} //right
+      })
+
+      stdin.resume()
     }
     callback()
 
-  }, function () {/* endless */})
+  }, function () {/* endless */});
 }
 
 function listenStdin(keys){
@@ -284,6 +202,52 @@ function listenStdin(keys){
   }
   process.stdin.on( 'data', fn);
   return fn
+}
+
+
+function PausableStream(){
+  var that = this
+  that.resumer = null;
+  that.isPaused = false;
+  that.keepPump = null;
+  that.stream = through2.obj(function(chunk, enc, callback){
+
+    var pause = that.isPaused
+    if (!pause && that.keepPump) {
+      pause = that.keepPump(chunk)
+    }
+
+    if (pause) {
+      that.resumer = function(pushOnly){
+        that.stream.push(chunk, enc)
+        if (!pushOnly) callback()
+      }
+      that.keepPump = null
+    } else {
+      that.stream.push(chunk, enc)
+      callback()
+    }
+  }, function(callback){
+    if (that.resumer) {
+      that.resumer(true)
+    }
+    that.resumer = null
+    callback()
+  })
+
+  that.pause = function(){
+    that.isPaused = true
+  }
+  that.resume = function(){
+    that.isPaused = false
+    if (that.resumer) {
+      that.resumer()
+    }
+  }
+  that.pumpUntil = function(fn){
+    that.keepPump = fn
+    return that
+  }
 }
 
 function onlyFirstBlock(cb) {
@@ -350,51 +314,5 @@ function afterBlock(type, required, trim) {
     }
   })
   return buf.stream
-}
-
-
-function PausableStream(){
-  var that = this
-  that.resumer = null;
-  that.isPaused = false;
-  that.keepPump = null;
-  that.stream = through2.obj(function(chunk, enc, callback){
-
-    var pause = that.isPaused
-    if (!pause && that.keepPump) {
-      pause = that.keepPump(chunk)
-    }
-
-    if (pause) {
-      that.resumer = function(pushOnly){
-        that.stream.push(chunk, enc)
-        if (!pushOnly) callback()
-      }
-      that.keepPump = null
-    } else {
-      that.stream.push(chunk, enc)
-      callback()
-    }
-  }, function(callback){
-    if (that.resumer) {
-      that.resumer(true)
-    }
-    that.resumer = null
-    callback()
-  })
-
-  that.pause = function(){
-    that.isPaused = true
-  }
-  that.resume = function(){
-    that.isPaused = false
-    if (that.resumer) {
-      that.resumer()
-    }
-  }
-  that.pumpUntil = function(fn){
-    that.keepPump = fn
-    return that
-  }
 }
 

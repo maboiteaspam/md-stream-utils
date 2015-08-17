@@ -17,14 +17,14 @@ fs.createReadStream('test/fixtures/chalk.md');
 fs.createReadStream('test/fixtures/changelog-maker.md');
 fs.createReadStream('test/fixtures/resumer.md');
 
-var pumpable = new PausableStream()
+var pumpable = new mds.PausableStream()
+pumpable.pause()
 
 fs.createReadStream('README.md')
   .pipe(mds.toTokenString())
 
   .pipe(pumpable.stream)
 
-  .pipe(mds.markPossibleTokens(['-','_','*','#','~','`']))
   .pipe(mds.byLine())
   .pipe(mds.applyLineBlock('heading', /^\s*(#{1,6})/i))
   .pipe(mds.applyLineBlock('listitem', /^\s*([\-+*]\s)/i))
@@ -75,180 +75,12 @@ fs.createReadStream('README.md')
   .pipe(mds.extractBlock('listitem', mds.colorizeToken(chalk.magenta.bold)))
   .pipe(mds.extractBlock('heading', mds.colorizeContent(chalk.bold.underline.cyan)))
 
-  .pipe(less(pumpable))
+  .pipe(mds.less(pumpable))
 
   .pipe(mds.flattenToString(mds.resolveColors.transform))
   .pipe(process.stdout)
   .on('end', function(){})
 
-function less(pumpable) {
-
-  var stdin = process.stdin;
-  stdin.setRawMode( true );
-  stdin.pause();
-  stdin.setEncoding( 'utf8' );
-  var size = process.stdout.getWindowSize()
-  var height = size[1]
-  var width = size[0]
-
-  var pumpMoreLines = function(lines){
-    var f = 1
-    if (!pumpable.keepPump) {
-      pumpable.pumpUntil(function(c){
-        var h = c.match(/\n/)
-        if (h) {
-          f+= h.length
-        }
-        return f>lines
-      })
-      pumpable.resume()
-    }
-  }
-
-  var wholeBuf = new mds.TokenString()
-  var curPosition = 0
-  var printToScreen = function(p){
-    var h = 0
-    var w = 0
-    var str = new mds.TokenString()
-    wholeBuf.forEach(function (c) {
-      w+= c.str.length;
-      if (c.str.match(/\n/)) {
-        w = 0
-        h++
-      }
-      if (w>width) {
-        w = 0
-        h++
-      }
-      if (h>=p && h<p+height) {
-        str.append(c)
-      }
-    })
-    return str;
-  }
-
-  var printed = false
-  var i = 0
-  var totalHeight = 0
-  return through2.obj(function(chunk, enc, callback){
-    var that = this;
-    var w = 0
-    chunk.forEach(function(c){
-      w+= c.str.length;
-      if (c.str.match(/\n/)) {
-        w = 0
-        totalHeight++
-      }
-      if (w>width) {
-        w = 0
-        totalHeight++
-      }
-    })
-    wholeBuf.concat(chunk);
-    var h = chunk.match(/\n/g);
-    i += h && h.length || 0;
-    if(!printed && i>=height) {
-      printed = true
-      pumpable.pause()
-      that.push(printToScreen(curPosition))
-
-      var moveUp = _.throttle(function(){
-        if (curPosition>0) {
-          curPosition--
-          require('readline').cursorTo(process.stdout, 0, 0)
-          require('readline').clearScreenDown(process.stdout)
-          require('readline').cursorTo(process.stdout, 0, 0)
-          that.push(printToScreen(curPosition))
-        }
-      }, 30, true)
-      var moveDown = _.throttle(function(){
-        if (curPosition+height<totalHeight) {
-          curPosition++
-          require('readline').cursorTo(process.stdout, 0, 0)
-          require('readline').clearScreenDown(process.stdout)
-          require('readline').cursorTo(process.stdout, 0, 0)
-          that.push(printToScreen(curPosition))
-        }
-        if (curPosition+height-totalHeight<10) {
-          pumpMoreLines(4)
-        }
-      }, 30, true)
-
-      listenStdin({
-        '\u0003': function(){// ctrl-c ( end of text )
-          process.exit();
-        },
-        '\u001bOA': moveUp,
-        '\u001b[A': moveUp,
-        '\u001bOB': moveDown,
-        '\u001b[B': moveDown,
-        '\u001bOD': function(){}, //left
-        '\u001bOC': function(){} //right
-      })
-
-      stdin.resume()
-    }
-    callback()
-
-  }, function () {/* endless */});
-}
-
-function listenStdin(keys){
-  var fn = function( key ){
-    if (key in keys) {
-      keys[key]()
-    }
-  }
-  process.stdin.on( 'data', fn);
-  return fn
-}
-
-
-function PausableStream(){
-  var that = this
-  that.resumer = null;
-  that.isPaused = false;
-  that.keepPump = null;
-  that.stream = through2.obj(function(chunk, enc, callback){
-
-    var pause = that.isPaused
-    if (!pause && that.keepPump) {
-      pause = that.keepPump(chunk)
-    }
-
-    if (pause) {
-      that.resumer = function(pushOnly){
-        that.stream.push(chunk, enc)
-        if (!pushOnly) callback()
-      }
-      that.keepPump = null
-    } else {
-      that.stream.push(chunk, enc)
-      callback()
-    }
-  }, function(callback){
-    if (that.resumer) {
-      that.resumer(true)
-    }
-    that.resumer = null
-    callback()
-  })
-
-  that.pause = function(){
-    that.isPaused = true
-  }
-  that.resume = function(){
-    that.isPaused = false
-    if (that.resumer) {
-      that.resumer()
-    }
-  }
-  that.pumpUntil = function(fn){
-    that.keepPump = fn
-    return that
-  }
-}
 
 function onlyFirstBlock(cb) {
   var i = 0

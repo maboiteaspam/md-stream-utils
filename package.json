@@ -25,15 +25,15 @@
   },
   "dependencies": {
     "chalk": "^1.1.0",
-    "multiline": "^1.0.2",
     "md-tokenizer": "0.0.1",
     "minimist": "^1.1.1",
+    "multiline": "^1.0.2",
     "regexp-quote": "0.0.0",
+    "resumer": "0.0.0",
     "through2": "^2.0.0",
     "underscore": "^1.8.3"
   },
   "devDependencies": {
-    "resumer": "0.0.0",
     "should": "^7.0.2"
   }
 }
